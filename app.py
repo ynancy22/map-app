@@ -29,14 +29,13 @@ with st.sidebar:
     # 地圖半徑控制
     st.write("地圖半徑 (Meters)")
     distance_slider = st.select_slider(
-        "或是選擇定點",
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
         value=10000
     )
     final_dist = distance_slider
 
     # 線條粗細
-    line_width_opt = st.selectbox("線條粗細 Line width", ["細 Light", "標準 Normal", "粗 Bold"], index=1)
+    line_width_opt = st.selectbox("線條粗細 Line width", ["細 Light", "標準 Regular", "粗 Bold"], index=1)
 
     st.divider()
 
@@ -53,7 +52,7 @@ with st.sidebar:
 
 # 轉換比例係數
 size_map = {"小 S": 0.7, "中 M": 1.0, "大 L": 1.4}
-line_map = {"細 Light": 0.6, "標準 Normal": 1.0, "粗 Bold": 1.6}
+line_map = {"細 Light": 0.6, "標準 Regular": 1.0, "粗 Bold": 1.6}
 
 # 初始化 Session State
 if 'poster_path' not in st.session_state:
