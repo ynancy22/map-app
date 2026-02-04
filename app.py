@@ -1,5 +1,7 @@
 import streamlit as st
 import os
+import shutil
+from pathlib import Path
 import create_map_poster
 from create_map_poster import create_poster, load_theme, get_coordinates
 
@@ -8,7 +10,6 @@ st.set_page_config(page_title="MapToPoster", page_icon="📍")
 st.title("📍 MapToPoster")
 st.write("網頁版地圖生成器")
 st.write("輸入城市與國家，生成專屬的極簡風格地圖海報。")
-st.write("Select a city and generate a stylish personalized map")
 
 # --- 側邊欄設定 ---
 with st.sidebar:
@@ -24,6 +25,7 @@ with st.sidebar:
     custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
     custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
 
+    # 座標顯示開關
     show_coords = st.checkbox("顯示地理座標 (Coordinates)", value=True)
     
     st.divider()
@@ -34,7 +36,7 @@ with st.sidebar:
         "選擇定點 Radius",
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
         value=10000,
-        label_visibility="collapsed" # 隱藏重複標籤
+        label_visibility="collapsed" 
     )
 
     # 線條粗細
@@ -61,16 +63,14 @@ line_map = {"細 Light": 0.6, "標準 Regular": 1.0, "粗 Bold": 1.6}
 if 'poster_path' not in st.session_state:
     st.session_state.poster_path = None
 
-# --- 主畫面按鈕與 Source 標註 ---
+# --- 主畫面按鈕與 Footer ---
 st.divider()
 
-# 按鈕居中對齊
 col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     generate_btn = st.button("GO!", use_container_width=True)
 
-# 將 Source 放在按鈕正下方，不固定在視窗底部以避免語法報錯
-# --- 頁面固定底部的來源標註 ---
+# Footer 標籤
 st.markdown(
     """
     <style>
@@ -79,7 +79,7 @@ st.markdown(
         left: 0;
         bottom: 0;
         width: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+        background-color: rgba(0, 0, 0, 0.7); 
         color: gray;
         text-align: center;
         padding: 10px 0;
@@ -87,22 +87,20 @@ st.markdown(
         z-index: 999;
     }
     .footer a {
-        color: #007bff;
         text-decoration: none;
     }
-    /* 增加頁面底部內距，防止內容被 footer 遮擋 */
     .main .block-container {
-        padding-bottom: 60px;
+        padding-bottom: 80px;
     }
     </style>
     <div class="footer">
-    <span>Source:</span>
+        <span>Source:</span>
         <a href="https://github.com/originalankur/maptoposter" target="_blank">
-            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=originalankur/maptoposter&color=black" alt="Original Source">
+            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=originalankur/maptoposter&color=black">
         </a>
-        <span>Made by:</span>
+        <span style="margin-left:15px;">Made by:</span>
         <a href="https://github.com/ynancy22/map-app" target="_blank">
-            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=ynancy22/map-app&color=cyan" alt="My Project">
+            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=ynancy22/map-app&color=cyan">
         </a>
     </div>
     """,
@@ -111,8 +109,19 @@ st.markdown(
 
 # --- 生成邏輯 ---
 if generate_btn:
+    # 1. 自動清理舊快取，防止重複生成錯誤
+    cache_dir = Path(os.environ.get("CACHE_DIR", "cache"))
+    if cache_dir.exists():
+        with st.spinner("正在清理舊快取... Cleaning cache..."):
+            for file in cache_dir.glob("*.pkl"):
+                try:
+                    file.unlink()
+                except Exception:
+                    pass
+
     with st.spinner("正在處理數據並繪圖，請稍候... Processing..."):
         try:
+            # 獲取座標
             coords = get_coordinates(city, country)
             create_map_poster.THEME = load_theme(selected_theme)
             
@@ -121,7 +130,7 @@ if generate_btn:
             
             output_file = f"posters/{city.replace(' ', '_')}_{selected_theme}.png"
             
-            # 呼叫核心引擎
+            # 2. 呼叫核心引擎 (包含 show_coords 參數)
             create_poster(
                 city=city,
                 country=country,
@@ -133,7 +142,8 @@ if generate_btn:
                 country_scale=size_map[country_size_opt],
                 line_scale=line_map[line_width_opt],
                 custom_text=custom_text,
-                custom_text_size=custom_text_size
+                custom_text_size=custom_text_size,
+                show_coords=show_coords
             )
             st.session_state.poster_path = output_file
                 
