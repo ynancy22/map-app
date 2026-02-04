@@ -226,7 +226,7 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame:
     cache_set(key, data)
     return data
 
-def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, fonts=None, city_scale=1.0, country_scale=1.0, line_scale=1.0, custom_text=None, custom_text_size=18):
+def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, fonts=None, city_scale=1.0, country_scale=1.0, line_scale=1.0, custom_text=None, custom_text_size=18, show_coords=True):
     # 下載數據
     comp_dist = dist * (max(height, width) / min(height, width)) / 4
     g = fetch_graph(point, comp_dist)
@@ -266,9 +266,10 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     f_sub = FontProperties(fname=active_fonts["light"], size=22 * country_scale * sf)
     ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_sub, zorder=11)
     
-    f_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
-    coord_text = f"{abs(point[0]):.4f}° {'N' if point[0]>=0 else 'S'} / {abs(point[1]):.4f}° {'E' if point[1]>=0 else 'W'}"
-    ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=f_coords, zorder=11)
+    if show_coords:
+        f_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
+        coord_text = f"{abs(point[0]):.4f}° {'N' if point[0]>=0 else 'S'} / {abs(point[1]):.4f}° {'E' if point[1]>=0 else 'W'}"
+        ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=f_coords, zorder=11)
 
     if custom_text:
         f_cust = FontProperties(fname=active_fonts["light"], size=custom_text_size * sf)
