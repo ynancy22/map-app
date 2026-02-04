@@ -15,15 +15,20 @@ with st.sidebar:
     st.header("🎨 海報自訂選項 Options")
     
     city = st.text_input("城市 (City)", "Taipei")
-    city_size_opt = st.selectbox("城市文字大小 font size", ["小 S", "中 M", "大 L"], index=1)
+    city_size_opt = st.radio("城市文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
     
     country = st.text_input("國家 (Country)", "Taiwan")
-    country_size_opt = st.selectbox("國家文字大小 font size", ["小 S", "中 M", "大 L"], index=1)
+    country_size_opt = st.radio("國家文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
+
+    custom_text = st.text_input("紀念文字 Customized text", placeholder="例如：旅行")
+    custom_text_size = st.slider("紀念文字大小", 10, 40, 18)
     
     # 客製化紀念文字
     custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
     custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
 
+    show_coords = st.checkbox("顯示地理座標 (Coordinates)", value=True)
+    
     st.divider()
 
     # 地圖半徑控制
