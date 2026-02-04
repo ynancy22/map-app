@@ -68,10 +68,33 @@ with col2:
     generate_btn = st.button("GO!", use_container_width=True)
 
 # 將 Source 放在按鈕正下方，不固定在視窗底部以避免語法報錯
+# --- 頁面固定底部的來源標註 ---
 st.markdown(
     """
-    <div style="text-align: center; color: gray; font-size: 0.8em; margin-top: 15px;">
-        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank" style="color: #007bff; text-decoration: none;">originalankur/maptoposter</a>
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+        color: gray;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 0.8em;
+        z-index: 999;
+    }
+    .footer a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    /* 增加頁面底部內距，防止內容被 footer 遮擋 */
+    .main .block-container {
+        padding-bottom: 60px;
+    }
+    </style>
+    <div class="footer">
+        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank">originalankur/maptoposter</a>
     </div>
     """,
     unsafe_allow_html=True
