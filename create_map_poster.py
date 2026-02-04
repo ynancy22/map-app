@@ -497,6 +497,8 @@ def create_poster(
     city_scale=1.0,
     country_scale=1.0,
     line_scale=1.0 
+    custom_text=None,   # 新增客製化文字參數
+    custom_text_size=18 # 新增文字大小參數
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -597,9 +599,9 @@ def create_poster(
             parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
-    edge_colors = get_edge_colors_by_type(g_proj)
+   edge_colors = get_edge_colors_by_type(g_proj)
     edge_widths = get_edge_widths_by_type(g_proj)
-    edge_widths = [w * line_scale for w in edge_widths]
+    edge_widths = [w * line_scale for w in edge_widths] # 套用縮放
 
     # Determine cropping limits to maintain the poster aspect ratio
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
@@ -625,9 +627,9 @@ def create_poster(
     scale_factor = min(height, width) / 12.0
 
     # Base font sizes (at 12 inches width)
-    base_main = 60 * city_scale
-    base_sub = 22 * country_scale
-    base_coords = 14
+    base_main = 60 * city_scale * scale_factor
+    base_sub = 22 * country_scale * scale_factor
+    base_coords = 14 * scale_factor
     base_attr = 8
 
     # 4. Typography - use custom fonts if provided, otherwise use default FONTS
@@ -737,6 +739,26 @@ def create_poster(
         linewidth=1 * scale_factor,
         zorder=11,
     )
+    if custom_text:
+        # 使用與國家名相似的字體風格 (light)
+        font_custom = FontProperties(
+            fname=active_fonts["light"] if active_fonts else None, 
+            size=custom_text_size * scale_factor
+        )
+        if not active_fonts:
+            font_custom.set_family("monospace")
+
+        ax.text(
+            0.5,
+            0.04,  # 位置設在座標 (0.07) 下方的空白處
+            custom_text,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.8, # 稍微透明增加質感
+            ha="center",
+            fontproperties=font_custom,
+            zorder=11,
+        )
 
     # --- ATTRIBUTION (bottom right) ---
     if FONTS:
@@ -1042,6 +1064,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                
             )
 
         print("\n" + "=" * 50)
