@@ -223,6 +223,28 @@ def get_coordinates(city, country):
     key = f"coords_{city.lower()}_{country.lower()}"
     cached = cache_get(key)
     if cached: return cached
+
+    # 使用更像瀏覽器的 User-Agent，並加入 timeout
+    geolocator = Nominatim(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) MapApp/1.0", 
+        timeout=10
+    )
+    # 嘗試最多 3 次，每次失敗後停頓 2 秒
+    for attempt in range(3):
+        try:
+            location = geolocator.geocode(f"{city}, {country}")
+            if location:
+                coords = (location.latitude, location.longitude)
+                cache_set(key, coords)
+                return coords
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(2)
+                continue
+            raise ValueError(f"地理編碼服務暫時不可用 (嘗試 3 次皆失敗): {e}")
+    
+    raise ValueError(f"找不到城市: {city}, {country}")
+
     geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
     time.sleep(1)
     location = geolocator.geocode(f"{city}, {country}")
