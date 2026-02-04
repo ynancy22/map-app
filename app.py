@@ -13,7 +13,6 @@ st.write("Select a city and generate a stylish personalized map")
 st.divider()
 st.markdown(
     """
-    # --- 頁面固定底部的來源標註 ---
     <style>
     .footer {
         position: fixed;
