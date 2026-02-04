@@ -4,23 +4,34 @@ import create_map_poster
 from create_map_poster import create_poster, load_theme, get_coordinates
 
 # 網頁配置
-st.set_page_config(page_title="MapToPoster Web", page_icon="📍")
-st.title("📍 MapToPoster 網頁版")
+st.set_page_config(page_title="MapToPoster", page_icon="📍")
+st.title("📍 MapToPoster")
+st.write("網頁版地圖生成器")
 st.write("輸入城市與國家，生成專屬的極簡風格地圖海報。")
-
+st.write("Select a city and generate a stylish personalized map")
+# --- 頁面最下方的來源標註 ---
+st.divider()
+st.markdown(
+    """
+    <div style="text-align: center; color: gray; font-size: 0.8em;">
+        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank" style="color: gray;">originalankur/maptoposter</a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 # --- 側邊欄設定 ---
 with st.sidebar:
-    st.header("🎨 海報自訂選項")
+    st.header("🎨 海報自訂選項 Options")
     
-    city = st.text_input("城市名稱 (City)", "Taipei")
-    city_size_opt = st.selectbox("城市文字大小", ["小", "中", "大"], index=1)
+    city = st.text_input("城市 (City)", "Taipei")
+    city_size_opt = st.selectbox("城市文字大小 font size", ["小", "中", "大"], index=1)
     
-    country = st.text_input("國家名稱 (Country)", "Taiwan")
-    country_size_opt = st.selectbox("國家文字大小", ["小", "中", "大"], index=1)
+    country = st.text_input("國家 (Country)", "Taiwan")
+    country_size_opt = st.selectbox("國家文字大小 font size", ["小", "中", "大"], index=1)
     
     # 客製化紀念文字
-    custom_text = st.text_input("紀念文字 (選填)", placeholder="例如：Our First Date / 2026.02.14")
-    custom_text_size = st.slider("紀念文字大小", 10, 40, 18)
+    custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
+    custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
 
     st.divider()
 
@@ -29,13 +40,13 @@ with st.sidebar:
     dist_input = st.number_input("直接輸入數值", value=10000, step=500)
     distance_slider = st.select_slider(
         "或是選擇定點",
-        options=[2000, 5000, 10000, 15000, 20000],
+        options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
         value=10000
     )
     final_dist = dist_input if dist_input != 10000 else distance_slider
 
     # 線條粗細
-    line_width_opt = st.select_slider("線條粗細", options=["細", "標準", "粗"], value="標準")
+    line_width_opt = st.select_slider("線條粗細 Line width", options=["細", "標準", "粗"], value="標準")
 
     st.divider()
 
@@ -51,16 +62,16 @@ with st.sidebar:
     selected_theme = st.selectbox("選擇主題 (Theme)", available_themes, index=0)
 
 # 轉換比例係數
-size_map = {"小": 0.7, "中": 1.0, "大": 1.4}
-line_map = {"細": 0.6, "標準": 1.0, "粗": 1.6}
+size_map = {"小 S": 0.7, "中 M": 1.0, "大 L": 1.4}
+line_map = {"細 S": 0.6, "標準 M": 1.0, "粗 L": 1.6}
 
 # 初始化 Session State 以保留下載前的預覽
 if 'poster_path' not in st.session_state:
     st.session_state.poster_path = None
 
 # --- 生成按鈕 ---
-if st.button("開始生成海報"):
-    with st.spinner("正在處理數據並繪圖，請稍候..."):
+if st.button("GO!"):
+    with st.spinner("正在處理數據並繪圖，請稍候... Processing..."):
         try:
             coords = get_coordinates(city, country)
             create_map_poster.THEME = load_theme(selected_theme)
@@ -87,16 +98,16 @@ if st.button("開始生成海報"):
             st.session_state.poster_path = output_file
                 
         except Exception as e:
-            st.error(f"生成失敗: {e}")
+            st.error(f"生成失敗 Error: {e}")
 
 # --- 顯示與下載區塊 ---
 if st.session_state.poster_path and os.path.exists(st.session_state.poster_path):
     st.divider()
-    st.image(st.session_state.poster_path, caption=f"預覽：{city}")
+    st.image(st.session_state.poster_path, caption=f"預覽 Preview：{city}")
     
     with open(st.session_state.poster_path, "rb") as file:
         st.download_button(
-            label="💾 下載高解析度海報",
+            label="💾 下載高解析度海報 Download Hi-res",
             data=file,
             file_name=f"{city}_poster.png",
             mime="image/png"
