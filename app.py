@@ -19,9 +19,6 @@ with st.sidebar:
     
     country = st.text_input("國家 (Country)", "Taiwan")
     country_size_opt = st.radio("國家文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
-
-    custom_text = st.text_input("紀念文字 Customized text", placeholder="例如：旅行")
-    custom_text_size = st.slider("紀念文字大小", 10, 40, 18)
     
     # 客製化紀念文字
     custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
