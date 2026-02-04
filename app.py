@@ -13,25 +13,33 @@ st.write("Select a city and generate a stylish personalized map")
 st.divider()
 st.markdown(
     """
+    # --- 頁面固定底部的來源標註 ---
+st.markdown(
+    """
     <style>
     .footer {
         position: fixed;
         left: 0;
         bottom: 0;
         width: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* 半透明背景，可依主題調整 */
+        background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
         color: gray;
         text-align: center;
         padding: 10px 0;
         font-size: 0.8em;
         z-index: 999;
     }
-    /* 為了不讓底部的 footer 擋住內容，給主容器加一點 padding */
-    .main .block-container {
-        padding-bottom: 50px;
+    .footer a {
+        color: #007bff;
+        text-decoration: none;
     }
-    <div style="text-align: center; color: gray; font-size: 0.8em;">
-        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank" style="color: gray;">originalankur/maptoposter</a>
+    /* 增加頁面底部內距，防止內容被 footer 遮擋 */
+    .main .block-container {
+        padding-bottom: 60px;
+    }
+    </style>
+    <div class="footer">
+        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank">originalankur/maptoposter</a>
     </div>
     """,
     unsafe_allow_html=True
