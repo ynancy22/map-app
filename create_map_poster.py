@@ -12,12 +12,12 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
-    # Corrected parameter definitions
+    # 修正：參數定義必須使用預設值賦值，而不是直接寫變數名
     city_scale=1.0,
     country_scale=1.0,
     line_scale=1.0,
-    custom_text=None,
-    custom_text_size=18
+    custom_text=None,     # 新增：接收網頁傳來的客製化文字
+    custom_text_size=18   # 新增：接收文字大小
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -120,13 +120,28 @@ def create_poster(
             alpha=0.7, ha="center", fontproperties=font_coords, zorder=11)
 
     # --- CUSTOM COMMEMORATIVE TEXT ---
+   # --- 新增：繪製紀念文字 ---
     if custom_text:
-        font_custom = FontProperties(fname=active_fonts["light"] if active_fonts else None, 
-                                     size=custom_text_size * scale_factor)
-        if not active_fonts: font_custom.set_family("monospace")
-        
-        ax.text(0.5, 0.04, custom_text, transform=ax.transAxes, color=THEME["text"],
-                alpha=0.8, ha="center", fontproperties=font_custom, zorder=11)
+        # 設定紀念文字字體
+        font_custom = FontProperties(
+            fname=active_fonts["light"] if active_fonts else None, 
+            size=custom_text_size * scale_factor
+        )
+        if not active_fonts:
+            font_custom.set_family("monospace")
+
+        # 座標 0.04 位於經緯度 (0.07) 的下方，適合做為註記
+        ax.text(
+            0.5,
+            0.04, 
+            custom_text,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.8,
+            ha="center",
+            fontproperties=font_custom,
+            zorder=11,
+        )
 
     # Save
     save_kwargs = {"facecolor": THEME["bg"], "bbox_inches": "tight", "pad_inches": 0.05}
