@@ -11,6 +11,7 @@ from typing import Optional
 import requests
 import matplotlib.font_manager as fm
 
+
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
 
@@ -135,42 +136,33 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
         return None
 
 
-def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
+def load_fonts(font_family=None):
     """
-    加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文，
-    若指定了 Google Fonts 則嘗試下載。
+    加載字體：優先偵測本地 Iansui-Regular.ttf。
     """
-    # 定義汧水體路徑
-    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
+    # 獲取專案根目錄，確保在雲端環境路徑解析正確
+    base_dir = Path(__file__).parent
+    # 強制轉換為字串路徑，避免 Python 3.13 的相容性問題
+    iansui_path = str(base_dir / "fonts" / "Iansui-Regular.ttf")
 
-    # 1. 檢查並註冊本地 Iansui 字體 (確保 Matplotlib 能辨識中文)
     if os.path.exists(iansui_path):
-        fm.fontManager.addfont(iansui_path)
-        print(f"✓ 已加載本地後備字體: {iansui_path}")
-        # 如果用戶沒有指定字體，或指定字體失效，則回退到 Iansui
-        fallback_fonts = {
-            "bold": iansui_path,
-            "regular": iansui_path,
-            "light": iansui_path,
-        }
-    else:
-        fallback_fonts = None
-        print(f"⚠ 找不到 {iansui_path}")
-
-    # 2. 處理 Google Fonts 請求
-    if font_family and font_family.lower() != "roboto":
-        print(f"嘗試加載 Google Font: {font_family}")
-        google_fonts = download_google_font(font_family)
-        if google_fonts:
-            return google_fonts
+        try:
+            # 嘗試註冊字體到 Matplotlib
+            fm.fontManager.addfont(iansui_path)
+            print(f"✓ 成功註冊字體: {iansui_path}")
+            return {
+                "bold": iansui_path,
+                "regular": iansui_path,
+                "light": iansui_path
+            }
+        except Exception as e:
+            # 如果檔案損壞 (FT2Font error) 會跳到這裡
+            print(f"⚠ 字體檔案無法讀取 (損壞或格式錯誤): {e}")
     
-    # 3. 回傳 Iansui 或原始 Roboto (如果 Iansui 也不存在)
-    if fallback_fonts:
-        return fallback_fonts
-
-    # 最終回退到原始 Roboto (不支援中文)
+    # 安全回退機制：改用 Roboto 或系統字體
+    print("正在回退至預設 Roboto 字體...")
     return {
-        "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
-        "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
-        "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
+        "bold": str(base_dir / "fonts" / "Roboto-Bold.ttf"),
+        "regular": str(base_dir / "fonts" / "Roboto-Regular.ttf"),
+        "light": str(base_dir / "fonts" / "Roboto-Light.ttf")
     }
