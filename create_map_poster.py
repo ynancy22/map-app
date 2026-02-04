@@ -239,8 +239,10 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     g_proj = ox.project_graph(g)
 
     # 繪製
+    # 使用 is not None 確保物件存在，使用 not water.empty 確保裡面有資料
     if water is not None and not water.empty:
         water.to_crs(g_proj.graph['crs']).plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0.5)
+    
     if parks is not None and not parks.empty:
         parks.to_crs(g_proj.graph['crs']).plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
 
