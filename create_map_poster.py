@@ -31,7 +31,7 @@ from shapely.geometry import Point
 from tqdm import tqdm
 
 from font_management import load_fonts
-from typing import Optional, dict # 加入這行以修正 Optional 未定義的問題
+from typing import Optional # 加入這行以修正 Optional 未定義的問題
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
