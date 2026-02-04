@@ -26,13 +26,13 @@ with st.sidebar:
     custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
 
     # 座標顯示開關
-    use_manual = st.toggle("手動輸入座標 (避免網路錯誤)", value=False)
-    show_coords = st.toggle("顯示地理座標 (Coordinates)", value=True)
+    use_manual = st.toggle("手動輸入座標 (Manual input)", value=False)
+    show_coords = st.toggle("顯示經緯度 (Show coordinates)", value=True)
    
     if use_manual:
         st.caption("在 Google Maps 欲製作的地點按右鍵即可複製座標")
-        manual_lat = st.number_input("緯度 Lat", value="", format="%.4f")
-        manual_lon = st.number_input("經度 Lon", value="", format="%.4f")
+        manual_lat = st.number_input("緯度 Lat", value=0, format="%.4f")
+        manual_lon = st.number_input("經度 Lon", value=0, format="%.4f")
         coords = (manual_lat, manual_lon)
     else:
         coords = None # 由 get_coordinates 自動獲取
