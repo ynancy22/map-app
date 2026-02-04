@@ -1,5 +1,8 @@
 streamlit
 osmnx
 matplotlib
-pandas
+geopandas
 geopy
+lat-lon-parser
+tqdm
+requests
