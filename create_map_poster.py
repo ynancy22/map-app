@@ -149,6 +149,35 @@ def load_theme(theme_name="terracotta"):
 
 # --- 5. 繪圖核心函數 ---
 
+
+def setup_global_fonts():
+    """
+    註冊所有 Roboto 與 Noto Sans TC 字種，並設定全域字體回退機制。
+    """
+    fonts_dir = "fonts"
+    # 定義所有需要註冊的檔案
+    font_files = [
+        "Roboto-Regular.ttf", "Roboto-Bold.ttf", "Roboto-Light.ttf",
+        "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf"
+    ]
+
+    for f in font_files:
+        path = os.path.join(fonts_dir, f)
+        if os.path.exists(path):
+            try:
+                fm.fontManager.addfont(path)
+            except Exception as e:
+                print(f"字體註冊警告 {f}: {e}")
+
+    # 設定全域字體清單：讓 Roboto 永遠作為第一順位，Noto Sans TC 作為中文補丁
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'DejaVu Sans', 'sans-serif']
+    # 確保負號等特殊符號正常顯示
+    plt.rcParams['axes.unicode_minus'] = False 
+
+# 執行全域設定
+setup_global_fonts()
+
+
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
     """Creates a fade effect at the top or bottom."""
     vals = np.linspace(0, 1, 256).reshape(-1, 1)
@@ -255,26 +284,29 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     # 裝飾與文字
     create_gradient_fade(ax, THEME['gradient_color'], 'bottom'); create_gradient_fade(ax, THEME['gradient_color'], 'top')
     sf = min(height, width) / 12.0
-    active_fonts = fonts or FONTS
+    # 統一使用的字體家族清單
+    target_family = ['Roboto', 'Noto Sans TC']
 
-    # 城市名 (支援中文)
-    f_main = FontProperties(fname=active_fonts["bold"], size=60 * city_scale * sf)
+    # 1. 繪製城市 (City) - 使用 Bold
     display_city = "  ".join(list(city.upper())) if is_latin_script(city) else city
-    ax.text(0.5, 0.14, display_city, transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_main, zorder=11)
+    ax.text(0.5, 0.14, display_city, transform=ax.transAxes, color=THEME["text"], 
+            ha="center", fontsize=60 * city_scale * sf, 
+            fontfamily=target_family, weight='bold', zorder=11)
 
-    # 國家與座標
-    f_sub = FontProperties(fname=active_fonts["light"], size=22 * country_scale * sf)
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_sub, zorder=11)
-    
+    # 2. 繪製國家 (Country) - 使用 Light
+    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], 
+            ha="center", fontsize=22 * country_scale * sf, 
+            fontfamily=target_family, weight='light', zorder=11)
+
     coord_y = 0.07  # 座標的預設高度
     
     # 繪製座標 (僅在勾選時顯示)
     if show_coords:
         lat, lon = point
         coord_text = f"{abs(lat):.4f}° {'N' if lat>=0 else 'S'} / {abs(lon):.4f}° {'E' if lon>=0 else 'W'}"
-        font_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
-        ax.text(0.5, coord_y, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=font_coords, zorder=11)
-        
+        ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], 
+                alpha=0.7, ha="center", fontsize=14 * sf, 
+                fontfamily=target_family, zorder=11)        
         # 如果有顯示座標，客製化文字放在比較低的位置
         custom_y = 0.04
     else:
@@ -283,9 +315,9 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
    
 
     if custom_text:
-        f_cust = FontProperties(fname=active_fonts["light"], size=custom_text_size * sf)
-        ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], alpha=0.8, ha="center", fontproperties=f_cust, zorder=11)
-
+        ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], 
+                alpha=0.8, ha="center", fontsize=custom_text_size * sf, 
+                fontfamily=target_family, zorder=11)
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
