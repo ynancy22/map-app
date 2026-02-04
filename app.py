@@ -10,19 +10,36 @@ st.write("輸入城市與國家，生成專屬的極簡風格地圖海報。")
 
 # 側邊欄設定
 with st.sidebar:
-    st.header("設定參數")
+    st.header("🎨 海報自訂選項")
     city = st.text_input("城市名稱 (City)", "Taipei")
-    country = st.text_input("國家名稱 (Country)", "Taiwan")
+    # 文字大小：城市
+    city_size_opt = st.selectbox("城市文字大小", ["小", "中", "大"], index=1)
     
-    # 取得所有主題 (確保 themes/ 資料夾內有 .json 檔案)
-    theme_folder = 'themes'
-    if os.path.exists(theme_folder):
-        available_themes = [f.replace('.json', '') for f in os.listdir(theme_folder) if f.endswith('.json')]
-    else:
-        available_themes = ["terracotta"] # 備用選項
-        
-    selected_theme = st.selectbox("選擇主題 (Theme)", available_themes, index=0)
-    distance = st.slider("地圖半徑 (Meters)", 2000, 20000, 10000)
+    country = st.text_input("國家名稱 (Country)", "Taiwan")
+    # 文字大小：國家
+    country_size_opt = st.selectbox("國家文字大小", ["小", "中", "大"], index=1)
+
+    st.divider()
+
+    # 地圖半徑：結合拉桿與輸入框
+    st.write("地圖半徑 (Meters)")
+    distance = st.number_input("直接輸入數值", value=10000, step=500)
+    distance = st.select_slider(
+        "或是選擇定點",
+        options=[2000, 5000, 10000, 15000, 20000],
+        value=distance if distance in [2000, 5000, 10000, 15000, 20000] else 10000
+    )
+
+    # 線條粗細
+    line_width_opt = st.select_slider("線條粗細", options=["細", "標準", "粗"], value="標準")
+
+    # 轉換選單數值為比例係數
+    size_map = {"小": 0.7, "中": 1.0, "大": 1.4}
+    line_map = {"細": 0.6, "標準": 1.0, "粗": 1.6}
+    
+    c_scale = size_map[city_size_opt]
+    n_scale = size_map[country_size_opt]
+    l_scale = line_map[line_width_opt]
 
 # 生成按鈕
 if st.button("開始生成海報"):
