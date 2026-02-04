@@ -18,7 +18,10 @@ with st.sidebar:
     
     country = st.text_input("國家名稱 (Country)", "Taiwan")
     country_size_opt = st.selectbox("國家文字大小", ["小", "中", "大"], index=1)
-
+    
+    # --- 新增客製化文字欄位 ---
+    custom_text = st.text_input("紀念文字 (選填)", placeholder="例如：Our First Date / 2026.02.14")
+    custom_text_size = st.slider("紀念文字大小", 10, 30, 18)
     st.divider()
 
     # 2. 地圖半徑控制 (結合輸入框與滑桿)
@@ -53,22 +56,27 @@ with st.sidebar:
 size_map = {"小": 0.7, "中": 1.0, "大": 1.4}
 line_map = {"細": 0.6, "標準": 1.0, "粗": 1.6}
 
+
+
+# --- 初始化 Session State ---
+# 用來儲存生成的圖片路徑，確保下載後不會消失
+if 'poster_path' not in st.session_state:
+    st.session_state.poster_path = None
+
 # --- 生成按鈕 ---
 if st.button("開始生成海報"):
     with st.spinner("正在處理數據並繪圖，請稍候..."):
         try:
-            # 1. 取得座標
             coords = get_coordinates(city, country)
-            
-            # 2. 設定主題全域變數
             create_map_poster.THEME = load_theme(selected_theme)
             
-            # 3. 建立儲存目錄
             if not os.path.exists("posters"):
                 os.makedirs("posters")
+            
             output_file = f"posters/{city}_{selected_theme}.png"
             
-            # 4. 呼叫引擎 (傳入新參數)
+            # 呼叫引擎
+            # --- app.py 呼叫部分 ---
             create_poster(
                 city=city,
                 country=country,
@@ -78,13 +86,27 @@ if st.button("開始生成海報"):
                 output_format="png",
                 city_scale=size_map[city_size_opt],
                 country_scale=size_map[country_size_opt],
-                line_scale=line_map[line_width_opt]
+                line_scale=line_map[line_width_opt],
+                custom_text=custom_text,      # 傳入客製化文字
+                custom_text_size=custom_text_size # 傳入滑桿設定的大小
             )
             
-            # 5. 顯示與下載
-            st.image(output_file, caption=f"{city}, {country} - {selected_theme}")
-            with open(output_file, "rb") as file:
-                st.download_button("下載高解析度海報", data=file, file_name=f"{city}_poster.png", mime="image/png")
+            # 將結果存入 session_state
+            st.session_state.poster_path = output_file
                 
         except Exception as e:
             st.error(f"生成失敗: {e}")
+
+# --- 顯示與下載區塊 (放在按鈕外) ---
+# 只要 session_state 裡面有路徑，就一直顯示
+if st.session_state.poster_path and os.path.exists(st.session_state.poster_path):
+    st.divider()
+    st.image(st.session_state.poster_path, caption=f"預覽：{city}")
+    
+    with open(st.session_state.poster_path, "rb") as file:
+        st.download_button(
+            label="下載高解析度海報",
+            data=file,
+            file_name=f"{city}_poster.png",
+            mime="image/png"
+        )
