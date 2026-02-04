@@ -96,7 +96,11 @@ st.markdown(
     <div class="footer">
     <span>Source:</span>
         <a href="https://github.com/originalankur/maptoposter" target="_blank">
-            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=originalankur/maptoposter&color=black" alt="GitHub Source">
+            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=originalankur/maptoposter&color=black" alt="Original Source">
+        </a>
+        <span>Made by:</span>
+        <a href="https://github.com/ynancy22/map-app" target="_blank">
+            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=ynancy22/map-app&color=cyan" alt="My Project">
         </a>
     </div>
     """,
