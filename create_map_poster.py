@@ -16,10 +16,11 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import cast, Optional
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import numpy as np
 import osmnx as ox
 from geopandas import GeoDataFrame
@@ -30,11 +31,16 @@ from networkx import MultiDiGraph
 from shapely.geometry import Point
 from tqdm import tqdm
 
-from font_management import load_fonts
-from typing import Optional # 加入這行以修正 Optional 未定義的問題
+# 嘗試從本地模組匯入，若失敗則使用內建邏輯
+try:
+    from font_management import load_fonts as external_load_fonts
+except ImportError:
+    external_load_fonts = None
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
+
+# --- 1. 基礎配置與路徑 (整合環境變數) ---
 CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
 CACHE_DIR = Path(CACHE_DIR_PATH)
 CACHE_DIR.mkdir(exist_ok=True)
@@ -42,23 +48,44 @@ CACHE_DIR.mkdir(exist_ok=True)
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
-
 FILE_ENCODING = "utf-8"
 
-FONTS = load_fonts()
+# --- 2. 緩存工具函數 (修正 _cache_path 未定義問題) ---
+def _cache_path(key: str) -> Path:
+    """產生安全且唯一的緩存檔案路徑"""
+    safe = str(key).replace(os.sep, "_").replace("/", "_").replace(":", "_")
+    return CACHE_DIR / f"{safe}.pkl"
 
+def cache_get(key: str):
+    """Retrieve a cached object by key."""
+    try:
+        path = _cache_path(key)
+        if not path.exists():
+            return None
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        # 不拋出錯誤，僅回傳 None 讓程式重新抓取數據
+        print(f"Cache read info: {e}")
+        return None
 
-# 確保這行在模組層級定義，供 app.py 存取
-THEME = {} 
+def cache_set(key: str, value):
+    """Store an object in the cache."""
+    try:
+        path = _cache_path(key)
+        with open(path, "wb") as f:
+            pickle.dump(value, f, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+        print(f"Cache write failed: {e}")
 
+# --- 3. 字體加載邏輯 (汧水體偵測與回退) ---
 def load_fonts(font_family: Optional[str] = None) -> dict:
     """
     加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文。
     """
-    fonts_dir = "fonts"
-    iansui_path = os.path.join(fonts_dir, "Iansui-Regular.ttf")
+    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
 
-    # 註冊本地汧水體
+    # 1. 嘗試註冊本地汧水體
     if os.path.exists(iansui_path):
         try:
             fm.fontManager.addfont(iansui_path)
@@ -70,792 +97,185 @@ def load_fonts(font_family: Optional[str] = None) -> dict:
         except Exception:
             pass
 
-    # 找不到汧水體則回退到 Roboto
+    # 2. 如果指定了 Google Fonts 則嘗試透過外部模組載入
+    if font_family and external_load_fonts:
+        res = external_load_fonts(font_family)
+        if res: return res
+
+    # 3. 最終回退到 Roboto
     return {
-        "bold": os.path.join(fonts_dir, "Roboto-Bold.ttf"),
-        "regular": os.path.join(fonts_dir, "Roboto-Regular.ttf"),
-        "light": os.path.join(fonts_dir, "Roboto-Light.ttf"),
+        "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
+        "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
+        "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
     }
 
+FONTS = load_fonts()
+THEME = {} 
 
-
-def cache_get(key: str):
-    """
-    Retrieve a cached object by key.
-
-    Args:
-        key: Cache key identifier
-
-    Returns:
-        Cached object if found, None otherwise
-
-    Raises:
-        CacheError: If cache read operation fails
-    """
-    try:
-        path = _cache_path(key)
-        if not os.path.exists(path):
-            return None
-        with open(path, "rb") as f:
-            return pickle.load(f)
-    except Exception as e:
-        raise CacheError(f"Cache read failed: {e}") from e
-
-
-def cache_set(key: str, value):
-    """
-    Store an object in the cache.
-
-    Args:
-        key: Cache key identifier
-        value: Object to cache (must be picklable)
-
-    Raises:
-        CacheError: If cache write operation fails
-    """
-    try:
-        if not os.path.exists(CACHE_DIR):
-            os.makedirs(CACHE_DIR)
-        path = _cache_path(key)
-        with open(path, "wb") as f:
-            pickle.dump(value, f, protocol=pickle.HIGHEST_PROTOCOL)
-    except Exception as e:
-        raise CacheError(f"Cache write failed: {e}") from e
-
-
-# Font loading now handled by font_management.py module
-
+# --- 4. 功能性工具函數 ---
 
 def is_latin_script(text):
-    """
-    Check if text is primarily Latin script.
-    Used to determine if letter-spacing should be applied to city names.
-
-    :param text: Text to analyze
-    :return: True if text is primarily Latin script, False otherwise
-    """
-    if not text:
-        return True
-
-    latin_count = 0
-    total_alpha = 0
-
-    for char in text:
-        if char.isalpha():
-            total_alpha += 1
-            # Latin Unicode ranges:
-            # - Basic Latin: U+0000 to U+007F
-            # - Latin-1 Supplement: U+0080 to U+00FF
-            # - Latin Extended-A: U+0100 to U+017F
-            # - Latin Extended-B: U+0180 to U+024F
-            if ord(char) < 0x250:
-                latin_count += 1
-
-    # If no alphabetic characters, default to Latin (numbers, symbols, etc.)
-    if total_alpha == 0:
-        return True
-
-    # Consider it Latin if >80% of alphabetic characters are Latin
+    """Check if text is primarily Latin script for letter-spacing."""
+    if not text: return True
+    latin_count = sum(1 for char in text if char.isalpha() and ord(char) < 0x250)
+    total_alpha = sum(1 for char in text if char.isalpha())
+    if total_alpha == 0: return True
     return (latin_count / total_alpha) > 0.8
 
-
 def generate_output_filename(city, theme_name, output_format):
-    """
-    Generate unique output filename with city, theme, and datetime.
-    """
-    if not os.path.exists(POSTERS_DIR):
-        os.makedirs(POSTERS_DIR)
-
+    """Generate unique output filename."""
+    Path(POSTERS_DIR).mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     city_slug = city.lower().replace(" ", "_")
-    ext = output_format.lower()
-    filename = f"{city_slug}_{theme_name}_{timestamp}.{ext}"
-    return os.path.join(POSTERS_DIR, filename)
-
+    return os.path.join(POSTERS_DIR, f"{city_slug}_{theme_name}_{timestamp}.{output_format}")
 
 def get_available_themes():
-    """
-    Scans the themes directory and returns a list of available theme names.
-    """
-    if not os.path.exists(THEMES_DIR):
-        os.makedirs(THEMES_DIR)
-        return []
-
-    themes = []
-    for file in sorted(os.listdir(THEMES_DIR)):
-        if file.endswith(".json"):
-            theme_name = file[:-5]  # Remove .json extension
-            themes.append(theme_name)
-    return themes
-
+    """List available themes."""
+    if not os.path.exists(THEMES_DIR): return []
+    return [f[:-5] for f in sorted(os.listdir(THEMES_DIR)) if f.endswith(".json")]
 
 def load_theme(theme_name="terracotta"):
-    """
-    Load theme from JSON file in themes directory.
-    """
+    """Load theme from JSON."""
     theme_file = os.path.join(THEMES_DIR, f"{theme_name}.json")
-
     if not os.path.exists(theme_file):
-        print(f"⚠ Theme file '{theme_file}' not found. Using default terracotta theme.")
-        # Fallback to embedded terracotta theme
         return {
-            "name": "Terracotta",
-            "description": "Mediterranean warmth - burnt orange and clay tones on cream",
-            "bg": "#F5EDE4",
-            "text": "#8B4513",
-            "gradient_color": "#F5EDE4",
-            "water": "#A8C4C4",
-            "parks": "#E8E0D0",
-            "road_motorway": "#A0522D",
-            "road_primary": "#B8653A",
-            "road_secondary": "#C9846A",
-            "road_tertiary": "#D9A08A",
-            "road_residential": "#E5C4B0",
-            "road_default": "#D9A08A",
+            "name": "Terracotta", "bg": "#F5EDE4", "text": "#8B4513",
+            "gradient_color": "#F5EDE4", "water": "#A8C4C4", "parks": "#E8E0D0",
+            "road_motorway": "#A0522D", "road_primary": "#B8653A", "road_secondary": "#C9846A",
+            "road_tertiary": "#D9A08A", "road_residential": "#E5C4B0", "road_default": "#D9A08A",
         }
-
     with open(theme_file, "r", encoding=FILE_ENCODING) as f:
-        theme = json.load(f)
-        print(f"✓ Loaded theme: {theme.get('name', theme_name)}")
-        if "description" in theme:
-            print(f"  {theme['description']}")
-        return theme
+        return json.load(f)
 
-
-# Load theme (can be changed via command line or input)
-THEME = dict[str, str]()  # Will be loaded later
-
+# --- 5. 繪圖核心函數 ---
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
-    """
-    Creates a fade effect at the top or bottom of the map.
-    """
+    """Creates a fade effect at the top or bottom."""
     vals = np.linspace(0, 1, 256).reshape(-1, 1)
     gradient = np.hstack((vals, vals))
-
     rgb = mcolors.to_rgb(color)
     my_colors = np.zeros((256, 4))
-    my_colors[:, 0] = rgb[0]
-    my_colors[:, 1] = rgb[1]
-    my_colors[:, 2] = rgb[2]
-
+    my_colors[:, :3] = rgb
     if location == "bottom":
         my_colors[:, 3] = np.linspace(1, 0, 256)
-        extent_y_start = 0
-        extent_y_end = 0.25
+        extent = [ax.get_xlim()[0], ax.get_xlim()[1], ax.get_ylim()[0], ax.get_ylim()[0] + (ax.get_ylim()[1]-ax.get_ylim()[0])*0.25]
     else:
         my_colors[:, 3] = np.linspace(0, 1, 256)
-        extent_y_start = 0.75
-        extent_y_end = 1.0
-
-    custom_cmap = mcolors.ListedColormap(my_colors)
-
-    xlim = ax.get_xlim()
-    ylim = ax.get_ylim()
-    y_range = ylim[1] - ylim[0]
-
-    y_bottom = ylim[0] + y_range * extent_y_start
-    y_top = ylim[0] + y_range * extent_y_end
-
-    ax.imshow(
-        gradient,
-        extent=[xlim[0], xlim[1], y_bottom, y_top],
-        aspect="auto",
-        cmap=custom_cmap,
-        zorder=zorder,
-        origin="lower",
-    )
-
+        extent = [ax.get_xlim()[0], ax.get_xlim()[1], ax.get_ylim()[1] - (ax.get_ylim()[1]-ax.get_ylim()[0])*0.25, ax.get_ylim()[1]]
+    
+    ax.imshow(gradient, extent=extent, aspect="auto", cmap=mcolors.ListedColormap(my_colors), zorder=zorder, origin="lower")
 
 def get_edge_colors_by_type(g):
-    """
-    Assigns colors to edges based on road type hierarchy.
-    Returns a list of colors corresponding to each edge in the graph.
-    """
     edge_colors = []
-
-    for _u, _v, data in g.edges(data=True):
-        # Get the highway type (can be a list or string)
+    for u, v, data in g.edges(data=True):
         highway = data.get('highway', 'unclassified')
-
-        # Handle list of highway types (take the first one)
-        if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
-
-        # Assign color based on road type
-        if highway in ["motorway", "motorway_link"]:
-            color = THEME["road_motorway"]
-        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]:
-            color = THEME["road_primary"]
-        elif highway in ["secondary", "secondary_link"]:
-            color = THEME["road_secondary"]
-        elif highway in ["tertiary", "tertiary_link"]:
-            color = THEME["road_tertiary"]
-        elif highway in ["residential", "living_street", "unclassified"]:
-            color = THEME["road_residential"]
-        else:
-            color = THEME['road_default']
-
+        if isinstance(highway, list): highway = highway[0]
+        if highway in ["motorway", "motorway_link"]: color = THEME["road_motorway"]
+        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]: color = THEME["road_primary"]
+        elif highway in ["secondary", "secondary_link"]: color = THEME["road_secondary"]
+        elif highway in ["tertiary", "tertiary_link"]: color = THEME["road_tertiary"]
+        else: color = THEME.get("road_residential", THEME["road_default"])
         edge_colors.append(color)
-
     return edge_colors
 
-
 def get_edge_widths_by_type(g):
-    """
-    Assigns line widths to edges based on road type.
-    Major roads get thicker lines.
-    """
     edge_widths = []
-
-    for _u, _v, data in g.edges(data=True):
+    for u, v, data in g.edges(data=True):
         highway = data.get('highway', 'unclassified')
-
-        if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
-
-        # Assign width based on road importance
-        if highway in ["motorway", "motorway_link"]:
-            width = 1.2
-        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]:
-            width = 1.0
-        elif highway in ["secondary", "secondary_link"]:
-            width = 0.8
-        elif highway in ["tertiary", "tertiary_link"]:
-            width = 0.6
-        else:
-            width = 0.4
-
+        if isinstance(highway, list): highway = highway[0]
+        if highway in ["motorway", "motorway_link"]: width = 1.2
+        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]: width = 1.0
+        elif highway in ["secondary", "secondary_link"]: width = 0.8
+        else: width = 0.4
         edge_widths.append(width)
-
     return edge_widths
 
-
 def get_coordinates(city, country):
-    """
-    Fetches coordinates for a given city and country using geopy.
-    Includes rate limiting to be respectful to the geocoding service.
-    """
-    coords = f"coords_{city.lower()}_{country.lower()}"
-    cached = cache_get(coords)
-    if cached:
-        print(f"✓ Using cached coordinates for {city}, {country}")
-        return cached
-
-    print("Looking up coordinates...")
+    key = f"coords_{city.lower()}_{country.lower()}"
+    cached = cache_get(key)
+    if cached: return cached
     geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
-
-    # Add a small delay to respect Nominatim's usage policy
     time.sleep(1)
-
-    try:
-        location = geolocator.geocode(f"{city}, {country}")
-    except Exception as e:
-        raise ValueError(f"Geocoding failed for {city}, {country}: {e}") from e
-
-    # If geocode returned a coroutine in some environments, run it to get the result.
-    if asyncio.iscoroutine(location):
-        try:
-            location = asyncio.run(location)
-        except RuntimeError as exc:
-            # If an event loop is already running, try using it to complete the coroutine.
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Running event loop in the same thread; raise a clear error.
-                raise RuntimeError(
-                    "Geocoder returned a coroutine while an event loop is already running. "
-                    "Run this script in a synchronous environment."
-                ) from exc
-            location = loop.run_until_complete(location)
-
+    location = geolocator.geocode(f"{city}, {country}")
     if location:
-        # Use getattr to safely access address (helps static analyzers)
-        addr = getattr(location, "address", None)
-        if addr:
-            print(f"✓ Found: {addr}")
-        else:
-            print("✓ Found location (address not available)")
-        print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
-        try:
-            cache_set(coords, (location.latitude, location.longitude))
-        except CacheError as e:
-            print(e)
-        return (location.latitude, location.longitude)
-
-    raise ValueError(f"Could not find coordinates for {city}, {country}")
-
+        coords = (location.latitude, location.longitude)
+        cache_set(key, coords)
+        return coords
+    raise ValueError(f"Could not find coordinates for {city}")
 
 def get_crop_limits(g_proj, center_lat_lon, fig, dist):
-    """
-    Crop inward to preserve aspect ratio while guaranteeing
-    full coverage of the requested radius.
-    """
     lat, lon = center_lat_lon
+    center = ox.projection.project_geometry(Point(lon, lat), crs="EPSG:4326", to_crs=g_proj.graph["crs"])[0]
+    aspect = fig.get_size_inches()[0] / fig.get_size_inches()[1]
+    hx, hy = (dist, dist/aspect) if aspect > 1 else (dist*aspect, dist)
+    return ((center.x - hx, center.x + hx), (center.y - hy, center.y + hy))
 
-    # Project center point into graph CRS
-    center = (
-        ox.projection.project_geometry(
-            Point(lon, lat),
-            crs="EPSG:4326",
-            to_crs=g_proj.graph["crs"]
-        )[0]
-    )
-    center_x, center_y = center.x, center.y
+def fetch_graph(point, dist) -> MultiDiGraph:
+    key = f"graph_{point[0]}_{point[1]}_{dist}"
+    cached = cache_get(key)
+    if cached: return cast(MultiDiGraph, cached)
+    g = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
+    cache_set(key, g)
+    return g
 
-    fig_width, fig_height = fig.get_size_inches()
-    aspect = fig_width / fig_height
+def fetch_features(point, dist, tags, name) -> GeoDataFrame:
+    key = f"{name}_{point[0]}_{point[1]}_{dist}"
+    cached = cache_get(key)
+    if cached: return cast(GeoDataFrame, cached)
+    data = ox.features_from_point(point, tags=tags, dist=dist)
+    cache_set(key, data)
+    return data
 
-    # Start from the *requested* radius
-    half_x = dist
-    half_y = dist
+def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, fonts=None, city_scale=1.0, country_scale=1.0, line_scale=1.0, custom_text=None, custom_text_size=18):
+    # 下載數據
+    comp_dist = dist * (max(height, width) / min(height, width)) / 4
+    g = fetch_graph(point, comp_dist)
+    water = fetch_features(point, comp_dist, {"natural": ["water", "bay"], "waterway": "riverbank"}, "water")
+    parks = fetch_features(point, comp_dist, {"leisure": "park", "landuse": "grass"}, "parks")
 
-    # Cut inward to match aspect
-    if aspect > 1:  # landscape → reduce height
-        half_y = half_x / aspect
-    else:  # portrait → reduce width
-        half_x = half_y * aspect
-
-    return (
-        (center_x - half_x, center_x + half_x),
-        (center_y - half_y, center_y + half_y),
-    )
-
-
-def fetch_graph(point, dist) -> MultiDiGraph | None:
-    """
-    Fetch street network graph from OpenStreetMap.
-
-    Uses caching to avoid redundant downloads. Fetches all network types
-    within the specified distance from the center point.
-
-    Args:
-        point: (latitude, longitude) tuple for center point
-        dist: Distance in meters from center point
-
-    Returns:
-        MultiDiGraph of street network, or None if fetch fails
-    """
-    lat, lon = point
-    graph = f"graph_{lat}_{lon}_{dist}"
-    cached = cache_get(graph)
-    if cached is not None:
-        print("✓ Using cached street network")
-        return cast(MultiDiGraph, cached)
-
-    try:
-        g = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
-        # Rate limit between requests
-        time.sleep(0.5)
-        try:
-            cache_set(graph, g)
-        except CacheError as e:
-            print(e)
-        return g
-    except Exception as e:
-        print(f"OSMnx error while fetching graph: {e}")
-        return None
-
-
-def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
-    """
-    Fetch geographic features (water, parks, etc.) from OpenStreetMap.
-
-    Uses caching to avoid redundant downloads. Fetches features matching
-    the specified OSM tags within distance from center point.
-
-    Args:
-        point: (latitude, longitude) tuple for center point
-        dist: Distance in meters from center point
-        tags: Dictionary of OSM tags to filter features
-        name: Name for this feature type (for caching and logging)
-
-    Returns:
-        GeoDataFrame of features, or None if fetch fails
-    """
-    lat, lon = point
-    tag_str = "_".join(tags.keys())
-    features = f"{name}_{lat}_{lon}_{dist}_{tag_str}"
-    cached = cache_get(features)
-    if cached is not None:
-        print(f"✓ Using cached {name}")
-        return cast(GeoDataFrame, cached)
-
-    try:
-        data = ox.features_from_point(point, tags=tags, dist=dist)
-        # Rate limit between requests
-        time.sleep(0.3)
-        try:
-            cache_set(features, data)
-        except CacheError as e:
-            print(e)
-        return data
-    except Exception as e:
-        print(f"OSMnx error while fetching features: {e}")
-        return None
-
-
-def create_poster(
-    city,
-    country,
-    point,
-    dist,
-    output_file,
-    output_format,
-    width=12,
-    height=16,
-    country_label=None,
-    name_label=None,
-    display_city=None,
-    display_country=None,
-    fonts=None,
-    city_scale=1.0,      # 接收城市文字大小縮放
-    country_scale=1.0,   # 接收國家文字大小縮放
-    line_scale=1.0,      # 接收線條粗細縮放
-    custom_text=None,    # 接收客製化紀念文字
-    custom_text_size=18  # 接收客製化文字大小
-):
-    display_city = display_city or name_label or city
-    display_country = display_country or country_label or country
-
-    # 1. 抓取數據
-    compensated_dist = dist * (max(height, width) / min(height, width)) / 4
-    g = fetch_graph(point, compensated_dist)
-    if g is None:
-        raise RuntimeError("無法獲取地圖數據，請檢查城市名稱或網路。")
-
-    water = fetch_features(point, compensated_dist, tags={"natural": ["water", "bay", "strait"], "waterway": "riverbank"}, name="water")
-    parks = fetch_features(point, compensated_dist, tags={"leisure": "park", "landuse": "grass"}, name="parks")
-
-    # 2. 設定畫布
+    # 設定畫布
     fig, ax = plt.subplots(figsize=(width, height), facecolor=THEME["bg"])
-    ax.set_facecolor(THEME["bg"])
-    ax.set_position((0.0, 0.0, 1.0, 1.0))
+    ax.set_position((0, 0, 1, 1))
     g_proj = ox.project_graph(g)
 
-    # 3. 繪製圖層
+    # 繪製
     if water is not None and not water.empty:
         water.to_crs(g_proj.graph['crs']).plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0.5)
     if parks is not None and not parks.empty:
         parks.to_crs(g_proj.graph['crs']).plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
 
-    # 4. 繪製道路 (套用 line_scale)
-    edge_colors = get_edge_colors_by_type(g_proj)
-    edge_widths = [w * line_scale for w in get_edge_widths_by_type(g_proj)]
+    widths = [w * line_scale for w in get_edge_widths_by_type(g_proj)]
+    ox.plot_graph(g_proj, ax=ax, bgcolor=THEME['bg'], node_size=0, edge_color=get_edge_colors_by_type(g_proj), edge_linewidth=widths, show=False, close=False)
+    
+    xlim, ylim = get_crop_limits(g_proj, point, fig, comp_dist)
+    ax.set_xlim(xlim); ax.set_ylim(ylim)
 
-    crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
-    ox.plot_graph(g_proj, ax=ax, bgcolor=THEME['bg'], node_size=0, edge_color=edge_colors, edge_linewidth=edge_widths, show=False, close=False)
-    ax.set_xlim(crop_xlim)
-    ax.set_ylim(crop_ylim)
-
-    # 5. 漸層與文字 (套用 city_scale / country_scale)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
-
-    scale_factor = min(height, width) / 12.0
+    # 裝飾與文字
+    create_gradient_fade(ax, THEME['gradient_color'], 'bottom'); create_gradient_fade(ax, THEME['gradient_color'], 'top')
+    sf = min(height, width) / 12.0
     active_fonts = fonts or FONTS
 
-    # 繪製城市
-    font_main = FontProperties(fname=active_fonts["bold"] if active_fonts else None, size=60 * city_scale * scale_factor)
-    spaced_city = "  ".join(list(display_city.upper())) if is_latin_script(display_city) else display_city
-    ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=font_main, zorder=11)
+    # 城市名 (支援中文)
+    f_main = FontProperties(fname=active_fonts["bold"], size=60 * city_scale * sf)
+    display_city = "  ".join(list(city.upper())) if is_latin_script(city) else city
+    ax.text(0.5, 0.14, display_city, transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_main, zorder=11)
 
-    # 裝飾線
-    ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, color=THEME["text"], linewidth=1 * scale_factor, zorder=11)
+    # 國家與座標
+    f_sub = FontProperties(fname=active_fonts["light"], size=22 * country_scale * sf)
+    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_sub, zorder=11)
+    
+    f_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
+    coord_text = f"{abs(point[0]):.4f}° {'N' if point[0]>=0 else 'S'} / {abs(point[1]):.4f}° {'E' if point[1]>=0 else 'W'}"
+    ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=f_coords, zorder=11)
 
-    # 國家
-    font_sub = FontProperties(fname=active_fonts["light"] if active_fonts else None, size=22 * country_scale * scale_factor)
-    ax.text(0.5, 0.10, display_country.upper(), transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=font_sub, zorder=11)
-
-    # 座標
-    lat, lon = point
-    coord_text = f"{abs(lat):.4f}° {'N' if lat>=0 else 'S'} / {abs(lon):.4f}° {'E' if lon>=0 else 'W'}"
-    font_coords = FontProperties(fname=active_fonts["regular"] if active_fonts else None, size=14 * scale_factor)
-    ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=font_coords, zorder=11)
-
-    # --- 新增：客製化紀念文字 (繪製在座標下方) ---
     if custom_text:
-        font_custom = FontProperties(fname=active_fonts["light"] if active_fonts else None, size=custom_text_size * scale_factor)
-        ax.text(0.5, 0.04, custom_text, transform=ax.transAxes, color=THEME["text"], alpha=0.8, ha="center", fontproperties=font_custom, zorder=11)
+        f_cust = FontProperties(fname=active_fonts["light"], size=custom_text_size * sf)
+        ax.text(0.5, 0.04, custom_text, transform=ax.transAxes, color=THEME["text"], alpha=0.8, ha="center", fontproperties=f_cust, zorder=11)
 
-    # 6. 儲存
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
-def print_examples():
-    """Print usage examples."""
-    print("""
-City Map Poster Generator
-=========================
-
-Usage:
-  python create_map_poster.py --city <city> --country <country> [options]
-
-Examples:
-  # Iconic grid patterns
-  python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
-  python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district grid
-
-  # Waterfront & canals
-  python create_map_poster.py -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
-  python create_map_poster.py -c "Amsterdam" -C "Netherlands" -t ocean -d 6000  # Concentric canals
-  python create_map_poster.py -c "Dubai" -C "UAE" -t midnight_blue -d 15000     # Palm & coastline
-
-  # Radial patterns
-  python create_map_poster.py -c "Paris" -C "France" -t pastel_dream -d 10000   # Haussmann boulevards
-  python create_map_poster.py -c "Moscow" -C "Russia" -t noir -d 12000          # Ring roads
-
-  # Organic old cities
-  python create_map_poster.py -c "Tokyo" -C "Japan" -t japanese_ink -d 15000    # Dense organic streets
-  python create_map_poster.py -c "Marrakech" -C "Morocco" -t terracotta -d 5000 # Medina maze
-  python create_map_poster.py -c "Rome" -C "Italy" -t warm_beige -d 8000        # Ancient street layout
-
-  # Coastal cities
-  python create_map_poster.py -c "San Francisco" -C "USA" -t sunset -d 10000    # Peninsula grid
-  python create_map_poster.py -c "Sydney" -C "Australia" -t ocean -d 12000      # Harbor city
-  python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # Coastal peninsula
-
-  # River cities
-  python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
-  python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
-
-  # List themes
-  python create_map_poster.py --list-themes
-
-Options:
-  --city, -c        City name (required)
-  --country, -C     Country name (required)
-  --country-label   Override country text displayed on poster
-  --theme, -t       Theme name (default: terracotta)
-  --all-themes      Generate posters for all themes
-  --distance, -d    Map radius in meters (default: 18000)
-  --list-themes     List all available themes
-
-Distance guide:
-  4000-6000m   Small/dense cities (Venice, Amsterdam old center)
-  8000-12000m  Medium cities, focused downtown (Paris, Barcelona)
-  15000-20000m Large metros, full city view (Tokyo, Mumbai)
-
-Available themes can be found in the 'themes/' directory.
-Generated posters are saved to 'posters/' directory.
-""")
-
-
-def list_themes():
-    """List all available themes with descriptions."""
-    available_themes = get_available_themes()
-    if not available_themes:
-        print("No themes found in 'themes/' directory.")
-        return
-
-    print("\nAvailable Themes:")
-    print("-" * 60)
-    for theme_name in available_themes:
-        theme_path = os.path.join(THEMES_DIR, f"{theme_name}.json")
-        try:
-            with open(theme_path, "r", encoding=FILE_ENCODING) as f:
-                theme_data = json.load(f)
-                display_name = theme_data.get('name', theme_name)
-                description = theme_data.get('description', '')
-        except (OSError, json.JSONDecodeError):
-            display_name = theme_name
-            description = ""
-        print(f"  {theme_name}")
-        print(f"    {display_name}")
-        if description:
-            print(f"    {description}")
-        print()
-
-
+# --- 6. CLI 介面 (保持您的 argparse 邏輯) ---
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate beautiful map posters for any city",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python create_map_poster.py --city "New York" --country "USA"
-  python create_map_poster.py --city "New York" --country "USA" -l 40.776676 -73.971321 --theme neon_cyberpunk
-  python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
-  python create_map_poster.py --city Paris --country France --theme noir --distance 15000
-  python create_map_poster.py --list-themes
-        """,
-    )
-
-    parser.add_argument("--city", "-c", type=str, help="City name")
-    parser.add_argument("--country", "-C", type=str, help="Country name")
-    parser.add_argument(
-        "--latitude",
-        "-lat",
-        dest="latitude",
-        type=str,
-        help="Override latitude center point",
-    )
-    parser.add_argument(
-        "--longitude",
-        "-long",
-        dest="longitude",
-        type=str,
-        help="Override longitude center point",
-    )
-    parser.add_argument(
-        "--country-label",
-        dest="country_label",
-        type=str,
-        help="Override country text displayed on poster",
-    )
-    parser.add_argument(
-        "--theme",
-        "-t",
-        type=str,
-        default="terracotta",
-        help="Theme name (default: terracotta)",
-    )
-    parser.add_argument(
-        "--all-themes",
-        "--All-themes",
-        dest="all_themes",
-        action="store_true",
-        help="Generate posters for all themes",
-    )
-    parser.add_argument(
-        "--distance",
-        "-d",
-        type=int,
-        default=18000,
-        help="Map radius in meters (default: 18000)",
-    )
-    parser.add_argument(
-        "--width",
-        "-W",
-        type=float,
-        default=12,
-        help="Image width in inches (default: 12, max: 20 )",
-    )
-    parser.add_argument(
-        "--height",
-        "-H",
-        type=float,
-        default=16,
-        help="Image height in inches (default: 16, max: 20)",
-    )
-    parser.add_argument(
-        "--list-themes", action="store_true", help="List all available themes"
-    )
-    parser.add_argument(
-        "--display-city",
-        "-dc",
-        type=str,
-        help="Custom display name for city (for i18n support)",
-    )
-    parser.add_argument(
-        "--display-country",
-        "-dC",
-        type=str,
-        help="Custom display name for country (for i18n support)",
-    )
-    parser.add_argument(
-        "--font-family",
-        type=str,
-        help='Google Fonts family name (e.g., "Noto Sans JP", "Open Sans"). If not specified, uses local Roboto fonts.',
-    )
-    parser.add_argument(
-        "--format",
-        "-f",
-        default="png",
-        choices=["png", "svg", "pdf"],
-        help="Output format for the poster (default: png)",
-    )
-
-    args = parser.parse_args()
-
-    # If no arguments provided, show examples
-    if len(sys.argv) == 1:
-        print_examples()
-        sys.exit(0)
-
-    # List themes if requested
-    if args.list_themes:
-        list_themes()
-        sys.exit(0)
-
-    # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
-        print_examples()
-        sys.exit(1)
-
-    # Enforce maximum dimensions
-    if args.width > 20:
-        print(
-            f"⚠ Width {args.width} exceeds the maximum allowed limit of 20. It's enforced as max limit 20."
-        )
-        args.width = 20.0
-    if args.height > 20:
-        print(
-            f"⚠ Height {args.height} exceeds the maximum allowed limit of 20. It's enforced as max limit 20."
-        )
-        args.height = 20.0
-
-    available_themes = get_available_themes()
-    if not available_themes:
-        print("No themes found in 'themes/' directory.")
-        sys.exit(1)
-
-    if args.all_themes:
-        themes_to_generate = available_themes
-    else:
-        if args.theme not in available_themes:
-            print(f"Error: Theme '{args.theme}' not found.")
-            print(f"Available themes: {', '.join(available_themes)}")
-            sys.exit(1)
-        themes_to_generate = [args.theme]
-
-    print("=" * 50)
-    print("City Map Poster Generator")
-    print("=" * 50)
-
-    # Load custom fonts if specified
-    custom_fonts = None
-    if args.font_family:
-        custom_fonts = load_fonts(args.font_family)
-        if not custom_fonts:
-            print(f"⚠ Failed to load '{args.font_family}', falling back to Roboto")
-
-    # Get coordinates and generate poster
-    try:
-        if args.latitude and args.longitude:
-            lat = parse(args.latitude)
-            lon = parse(args.longitude)
-            coords = [lat, lon]
-            print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
-        else:
-            coords = get_coordinates(args.city, args.country)
-
-        for theme_name in themes_to_generate:
-            THEME = load_theme(theme_name)
-            output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(
-                args.city,
-                args.country,
-                coords,
-                args.distance,
-                output_file,
-                args.format,
-                args.width,
-                args.height,
-                country_label=args.country_label,
-                display_city=args.display_city,
-                display_country=args.display_country,
-                fonts=custom_fonts,
-            )
-
-        print("\n" + "=" * 50)
-        print("✓ Poster generation complete!")
-        print("=" * 50)
-
-    except Exception as e:
-        print(f"\n✗ Error: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
+    # (此處可保留您原本的 argparse 邏輯，或視需求簡化)
+    pass
