@@ -50,20 +50,36 @@ FILE_ENCODING = "utf-8"
 FONTS = load_fonts()
 
 
-def _cache_path(key: str) -> str:
+def load_fonts(font_family: Optional[str] = None) -> dict:
     """
-    Generate a safe cache file path from a cache key.
-
-    Args:
-        key: Cache key identifier
-
-    Returns:
-        Path to cache file with .pkl extension
+    加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文。
     """
-    safe = key.replace(os.sep, "_")
-    return os.path.join(CACHE_DIR, f"{safe}.pkl")
+    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
 
+    # 1. 註冊本地汧水體 (確保支援中文)
+    if os.path.exists(iansui_path):
+        try:
+            fm.fontManager.addfont(iansui_path)  # 將字體加入系統庫
+            fallback_fonts = {
+                "bold": iansui_path,
+                "regular": iansui_path,
+                "light": iansui_path,
+            }
+        except Exception as e:
+            print(f"字體註冊失敗: {e}")
+            fallback_fonts = None
+    else:
+        fallback_fonts = None
 
+    # 2. 如果沒找到汧水體，回退到預設的 Roboto
+    if not fallback_fonts:
+        fallback_fonts = {
+            "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
+            "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
+            "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
+        }
+
+    return fallback_fonts
 def cache_get(key: str):
     """
     Retrieve a cached object by key.
