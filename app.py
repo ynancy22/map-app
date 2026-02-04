@@ -113,11 +113,13 @@ if generate_btn:
     cache_dir = Path(os.environ.get("CACHE_DIR", "cache"))
     if cache_dir.exists():
         with st.spinner("正在清理舊快取... Cleaning cache..."):
-            for file in cache_dir.glob("*.pkl"):
-                try:
-                    file.unlink()
-                except Exception:
-                    pass
+            for pkl in cache_dir.glob("*.pkl"):
+                # 關鍵：只刪除地圖數據 (graph/water/parks)，保留 coords 快取
+                if "graph_" in pkl.name or "water_" in pkl.name or "parks_" in pkl.name:
+                    try:
+                        pkl.unlink()
+                    except:
+                        pass
 
     with st.spinner("正在處理數據並繪圖，請稍候... Processing..."):
         try:
