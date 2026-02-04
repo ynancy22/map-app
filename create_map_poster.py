@@ -31,7 +31,7 @@ from shapely.geometry import Point
 from tqdm import tqdm
 
 from font_management import load_fonts
-
+from typing import Optional, dict # 加入這行以修正 Optional 未定義的問題
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
@@ -50,36 +50,37 @@ FILE_ENCODING = "utf-8"
 FONTS = load_fonts()
 
 
+# 確保這行在模組層級定義，供 app.py 存取
+THEME = {} 
+
 def load_fonts(font_family: Optional[str] = None) -> dict:
     """
     加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文。
     """
-    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
+    fonts_dir = "fonts"
+    iansui_path = os.path.join(fonts_dir, "Iansui-Regular.ttf")
 
-    # 1. 註冊本地汧水體 (確保支援中文)
+    # 註冊本地汧水體
     if os.path.exists(iansui_path):
         try:
-            fm.fontManager.addfont(iansui_path)  # 將字體加入系統庫
-            fallback_fonts = {
+            fm.fontManager.addfont(iansui_path)
+            return {
                 "bold": iansui_path,
                 "regular": iansui_path,
                 "light": iansui_path,
             }
-        except Exception as e:
-            print(f"字體註冊失敗: {e}")
-            fallback_fonts = None
-    else:
-        fallback_fonts = None
+        except Exception:
+            pass
 
-    # 2. 如果沒找到汧水體，回退到預設的 Roboto
-    if not fallback_fonts:
-        fallback_fonts = {
-            "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
-            "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
-            "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
-        }
+    # 找不到汧水體則回退到 Roboto
+    return {
+        "bold": os.path.join(fonts_dir, "Roboto-Bold.ttf"),
+        "regular": os.path.join(fonts_dir, "Roboto-Regular.ttf"),
+        "light": os.path.join(fonts_dir, "Roboto-Light.ttf"),
+    }
 
-    return fallback_fonts
+
+
 def cache_get(key: str):
     """
     Retrieve a cached object by key.
