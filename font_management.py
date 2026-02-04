@@ -136,35 +136,40 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
 
 def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
     """
-    Load fonts from local directory or download from Google Fonts.
-    Returns dict with font paths for different weights.
-
-    :param font_family: Google Fonts family name (e.g., 'Noto Sans JP', 'Open Sans').
-                       If None, uses local Roboto fonts.
-    :return: Dict with 'bold', 'regular', 'light' keys mapping to font file paths,
-             or None if all loading methods fail
+    加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文，
+    若指定了 Google Fonts 則嘗試下載。
     """
-    # If custom font family specified, try to download from Google Fonts
+    # 定義汧水體路徑
+    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
+
+    # 1. 檢查並註冊本地 Iansui 字體 (確保 Matplotlib 能辨識中文)
+    if os.path.exists(iansui_path):
+        fm.fontManager.addfont(iansui_path)
+        print(f"✓ 已加載本地後備字體: {iansui_path}")
+        # 如果用戶沒有指定字體，或指定字體失效，則回退到 Iansui
+        fallback_fonts = {
+            "bold": iansui_path,
+            "regular": iansui_path,
+            "light": iansui_path,
+        }
+    else:
+        fallback_fonts = None
+        print(f"⚠ 找不到 {iansui_path}")
+
+    # 2. 處理 Google Fonts 請求
     if font_family and font_family.lower() != "roboto":
-        print(f"Loading Google Font: {font_family}")
-        fonts = download_google_font(font_family)
-        if fonts:
-            print(f"✓ Font '{font_family}' loaded successfully")
-            return fonts
+        print(f"嘗試加載 Google Font: {font_family}")
+        google_fonts = download_google_font(font_family)
+        if google_fonts:
+            return google_fonts
+    
+    # 3. 回傳 Iansui 或原始 Roboto (如果 Iansui 也不存在)
+    if fallback_fonts:
+        return fallback_fonts
 
-        print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
-
-    # Default: Load local Roboto fonts
-    fonts = {
+    # 最終回退到原始 Roboto (不支援中文)
+    return {
         "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
         "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
         "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
     }
-
-    # Verify fonts exist
-    for _weight, path in fonts.items():
-        if not os.path.exists(path):
-            print(f"⚠ Font not found: {path}")
-            return None
-
-    return fonts
