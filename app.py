@@ -115,7 +115,7 @@ if generate_btn:
         with st.spinner("正在清理舊快取... Cleaning cache..."):
             for pkl in cache_dir.glob("*.pkl"):
                 # 關鍵：只刪除地圖數據 (graph/water/parks)，保留 coords 快取
-                if "graph_" in pkl.name or "water_" in pkl.name or "parks_" in pkl.name:
+                if any(prefix in pkl.name for prefix in ["graph_", "water_", "parks_"]):
                     try:
                         pkl.unlink()
                     except:
