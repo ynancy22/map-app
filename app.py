@@ -94,7 +94,10 @@ st.markdown(
     }
     </style>
     <div class="footer">
-        Source: <a href="https://github.com/originalankur/maptoposter" target="_blank">originalankur/maptoposter</a>
+    <span>Source:</span>
+        <a href="https://github.com/originalankur/maptoposter" target="_blank">
+            <img src="https://flat.badgen.net/badge/icon/github?icon=github&label=originalankur/maptoposter&color=black" alt="GitHub Source">
+        </a>
     </div>
     """,
     unsafe_allow_html=True
