@@ -28,11 +28,12 @@ with st.sidebar:
 
     # 地圖半徑控制
     st.write("地圖半徑 (Meters)")
-    distance_slider = st.select_slider(
+    final_dist = st.select_slider(
+        "選擇定點 Radius",
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
-        value=10000
+        value=10000,
+        label_visibility="collapsed" # 隱藏重複標籤
     )
-    final_dist = distance_slider
 
     # 線條粗細
     line_width_opt = st.selectbox("線條粗細 Line width", ["細 Light", "標準 Regular", "粗 Bold"], index=1)
