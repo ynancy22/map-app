@@ -19,7 +19,7 @@ st.markdown(
         left: 0;
         bottom: 0;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.8); /* 半透明背景，可依主題調整 */
+        background-color: rgba(0, 0, 0, 0.5); /* 半透明背景，可依主題調整 */
         color: gray;
         text-align: center;
         padding: 10px 0;
@@ -56,7 +56,7 @@ with st.sidebar:
 
     # 地圖半徑控制 (結合輸入框與滑桿)
     st.write("地圖半徑 (Meters)")
-    dist_input = st.number_input("直接輸入數值", value=10000, step=500)
+    # dist_input = st.number_input("直接輸入數值", value=10000, step=500)
     distance_slider = st.select_slider(
         "或是選擇定點",
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
