@@ -14,8 +14,6 @@ st.divider()
 st.markdown(
     """
     # --- 頁面固定底部的來源標註 ---
-st.markdown(
-    """
     <style>
     .footer {
         position: fixed;
