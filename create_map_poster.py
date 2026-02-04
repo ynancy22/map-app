@@ -35,9 +35,8 @@ from typing import Optional # 加入這行以修正 Optional 未定義的問題
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
-
-
-CACHE_DIR = Path("cache")
+CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
+CACHE_DIR = Path(CACHE_DIR_PATH)
 CACHE_DIR.mkdir(exist_ok=True)
 
 THEMES_DIR = "themes"
