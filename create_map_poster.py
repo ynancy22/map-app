@@ -266,14 +266,25 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     f_sub = FontProperties(fname=active_fonts["light"], size=22 * country_scale * sf)
     ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], ha="center", fontproperties=f_sub, zorder=11)
     
+    coord_y = 0.07  # 座標的預設高度
+    
+    # 繪製座標 (僅在勾選時顯示)
     if show_coords:
-        f_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
-        coord_text = f"{abs(point[0]):.4f}° {'N' if point[0]>=0 else 'S'} / {abs(point[1]):.4f}° {'E' if point[1]>=0 else 'W'}"
-        ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=f_coords, zorder=11)
+        lat, lon = point
+        coord_text = f"{abs(lat):.4f}° {'N' if lat>=0 else 'S'} / {abs(lon):.4f}° {'E' if lon>=0 else 'W'}"
+        font_coords = FontProperties(fname=active_fonts["regular"], size=14 * sf)
+        ax.text(0.5, coord_y, coord_text, transform=ax.transAxes, color=THEME["text"], alpha=0.7, ha="center", fontproperties=font_coords, zorder=11)
+        
+        # 如果有顯示座標，客製化文字放在比較低的位置
+        custom_y = 0.04
+    else:
+        # 如果隱藏座標，客製化文字往上移動到接近原本座標的位置
+        custom_y = 0.06
+   
 
     if custom_text:
         f_cust = FontProperties(fname=active_fonts["light"], size=custom_text_size * sf)
-        ax.text(0.5, 0.04, custom_text, transform=ax.transAxes, color=THEME["text"], alpha=0.8, ha="center", fontproperties=f_cust, zorder=11)
+        ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], alpha=0.8, ha="center", fontproperties=f_cust, zorder=11)
 
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
