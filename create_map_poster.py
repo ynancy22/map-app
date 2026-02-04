@@ -493,6 +493,10 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    # 新增以下三個參數
+    city_scale=1.0,
+    country_scale=1.0,
+    line_scale=1.0 
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -595,6 +599,7 @@ def create_poster(
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
     edge_widths = get_edge_widths_by_type(g_proj)
+    edge_widths = [w * line_scale for w in edge_widths]
 
     # Determine cropping limits to maintain the poster aspect ratio
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
@@ -620,8 +625,8 @@ def create_poster(
     scale_factor = min(height, width) / 12.0
 
     # Base font sizes (at 12 inches width)
-    base_main = 60
-    base_sub = 22
+    base_main = 60 * city_scale
+    base_sub = 22 * country_scale
     base_coords = 14
     base_attr = 8
 
