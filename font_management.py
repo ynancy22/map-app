@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
+import matplotlib.font_manager as fm
 
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
