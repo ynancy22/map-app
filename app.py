@@ -13,12 +13,31 @@ st.write("Select a city and generate a stylish personalized map")
 st.divider()
 st.markdown(
     """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.8); /* 半透明背景，可依主題調整 */
+        color: gray;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 0.8em;
+        z-index: 999;
+    }
+    /* 為了不讓底部的 footer 擋住內容，給主容器加一點 padding */
+    .main .block-container {
+        padding-bottom: 50px;
+    }
     <div style="text-align: center; color: gray; font-size: 0.8em;">
         Source: <a href="https://github.com/originalankur/maptoposter" target="_blank" style="color: gray;">originalankur/maptoposter</a>
     </div>
     """,
     unsafe_allow_html=True
 )
+
+
 # --- 側邊欄設定 ---
 with st.sidebar:
     st.header("🎨 海報自訂選項 Options")
@@ -112,3 +131,6 @@ if st.session_state.poster_path and os.path.exists(st.session_state.poster_path)
             file_name=f"{city}_poster.png",
             mime="image/png"
         )
+
+
+
