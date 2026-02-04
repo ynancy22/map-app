@@ -59,15 +59,19 @@ if st.button("開始生成海報"):
             output_file = f"posters/{city}_{selected_theme}.png"
             
             # 4. 呼叫原始生成函數 (修正參數名稱以符合原代碼第 455 行)
+            # 呼叫修正後的引擎
             create_poster(
                 city=city,
                 country=country,
-                point=coords,        # 原代碼使用 point 作為參數名
+                point=coords,
                 dist=distance,
                 output_file=output_file,
-                output_format="png"  # 原代碼要求指定格式
+                output_format="png",
+                city_scale=c_scale,      # 傳入城市文字縮放
+                country_scale=n_scale,   # 傳入國家文字縮放
+                line_scale=l_scale       # 傳入線條縮放
             )
-            
+                        
             # 5. 顯示圖片
             st.image(output_file, caption=f"{city}, {country} - {selected_theme}")
             
