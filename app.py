@@ -48,10 +48,10 @@ with st.sidebar:
     st.header("🎨 海報自訂選項 Options")
     
     city = st.text_input("城市 (City)", "Taipei")
-    city_size_opt = st.selectbox("城市文字大小 font size", ["小", "中", "大"], index=1)
+    city_size_opt = st.selectbox("城市文字大小 font size", ["小 S", "中 M", "大 L"], index=1)
     
     country = st.text_input("國家 (Country)", "Taiwan")
-    country_size_opt = st.selectbox("國家文字大小 font size", ["小", "中", "大"], index=1)
+    country_size_opt = st.selectbox("國家文字大小 font size", ["小 S", "中 M", "大 L"], index=1)
     
     # 客製化紀念文字
     custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
@@ -70,7 +70,7 @@ with st.sidebar:
     final_dist = distance_slider
 
     # 線條粗細
-    line_width_opt = st.select_slider("線條粗細 Line width", options=["細", "標準", "粗"], value="標準")
+    line_width_opt = st.selectbox("線條粗細 Line width", ["細 Light", "標準 Normal", "粗 Bold"], index=1)
 
     st.divider()
 
@@ -87,7 +87,7 @@ with st.sidebar:
 
 # 轉換比例係數
 size_map = {"小 S": 0.7, "中 M": 1.0, "大 L": 1.4}
-line_map = {"細 S": 0.6, "標準 M": 1.0, "粗 L": 1.6}
+line_map = {"細 Light": 0.6, "標準 Normal": 1.0, "粗 Bold": 1.6}
 
 # 初始化 Session State 以保留下載前的預覽
 if 'poster_path' not in st.session_state:
