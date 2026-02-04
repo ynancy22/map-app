@@ -62,7 +62,7 @@ with st.sidebar:
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
         value=10000
     )
-    final_dist = dist_input if dist_input != 10000 else distance_slider
+    final_dist = distance_slider
 
     # 線條粗細
     line_width_opt = st.select_slider("線條粗細 Line width", options=["細", "標準", "粗"], value="標準")
