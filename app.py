@@ -193,7 +193,7 @@ def theme_selector_with_single_preview():
 
    # 3. 調整預覽配置：兩欄顯示
     # 左欄 1/3 寬度，右欄 2/3 寬度
-    col1, col2 = st.sidebar.columns([1, 2])
+    col1, col2 = st.sidebar.columns([1, 4])
     
     preview_path = PREVIEW_DIR / f"{selected_theme}.png"
     
@@ -208,8 +208,8 @@ def theme_selector_with_single_preview():
         # 右側顯示相關文字
         st.write(f"**{selected_theme}**")
         # 這裡可以根據主題名稱顯示描述，或是顯示色彩分析
-        st.caption("主題預覽色帶")
-        st.caption("(文字 | 背景 | 道路)")
+        st.caption("(配色：文字 | 背景 | 道路)")
+        st.caption("(Theme preview: text/bg/road)")
     
     return selected_theme
 
