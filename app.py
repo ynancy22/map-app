@@ -30,10 +30,10 @@ with st.sidebar:
     st.header("🎨 自訂選項 Options")
     
     city = st.text_input("城市 (City)", "Taipei")
-    city_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
+    city_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True, key="city_size"))
     
     country = st.text_input("國家 (Country)", "Taiwan")
-    country_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
+    country_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True, key="country_size"))
     
     # 客製化紀念文字
     custom_text = st.text_input("客製化文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
