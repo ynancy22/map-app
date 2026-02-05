@@ -137,13 +137,12 @@ def load_theme(theme_name="terracotta"):
 
 # --- 5. 繪圖核心函數 ---
 
-
 def setup_global_fonts():
     """
     註冊所有 Roboto 與 Noto Sans TC 字種，並設定全域字體回退機制。
     """
     fonts_dir = "fonts"
-    # 定義所有需要註冊的檔案
+    # 修正 1：補上 NotoSansTC-Light.ttf 後方遺失的逗號
     font_files = [
         "Roboto-Regular.ttf", "Roboto-Bold.ttf", "Roboto-Light.ttf",
         "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf",
@@ -158,14 +157,21 @@ def setup_global_fonts():
             except Exception as e:
                 print(f"字體註冊警告 {f}: {e}")
     
-    # 設定全域字體清單：讓 Roboto 永遠作為第一順位，Noto Sans TC 作為中文補丁
-    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
-    # 確保負號等特殊符號正常顯示
+    # 修正 2：在 print 之前先定義 registered_emoji 變數
+    # 這樣能動態偵測 Linux 系統中的 Emoji 家族名稱 (通常為 'Noto Color Emoji')
+    registered_emoji = [f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name]
+    emoji_family = registered_emoji[0] if registered_emoji else 'Noto Color Emoji'
+
+    # 設定全域字體回退清單
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', emoji_family, 'DejaVu Sans', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False 
-    # 診斷資訊：這會印出 ['Noto Color Emoji'] 或類似名稱
-    # print(f"DEBUG: 成功註冊的 Emoji 字體: {registered_emoji}")
+
+    # 現在可以安全地印出診斷資訊，不會再報 NameError
+    print(f"DEBUG: 成功註冊的 Emoji 字體: {registered_emoji}")
+
 # 執行全域設定
 setup_global_fonts()
+
 
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
