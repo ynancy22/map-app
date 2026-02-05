@@ -50,6 +50,12 @@ FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 FILE_ENCODING = "utf-8"
 
+
+# FONTS = load_fonts()
+THEME = {} 
+# 執行全域設定
+setup_global_fonts()
+
 # --- 2. 緩存工具函數 (修正 _cache_path 未定義問題) ---
 def _cache_path(key: str) -> Path:
     """產生安全且唯一的緩存檔案路徑"""
@@ -93,8 +99,7 @@ def load_fonts(font_family: Optional[str] = None) -> dict:
         "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
     }
 
-FONTS = load_fonts()
-THEME = {} 
+
 
 # --- 4. 功能性工具函數 ---
 
@@ -142,7 +147,7 @@ def setup_global_fonts():
     # 定義所有需要註冊的檔案
     font_files = [
         "Roboto-Regular.ttf", "Roboto-Bold.ttf", "Roboto-Light.ttf",
-        "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf"
+        "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf",
         "NotoColorEmoji-Regular.ttf"
     ]
 
@@ -162,8 +167,6 @@ def setup_global_fonts():
     print([f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name])
 
 
-# 執行全域設定
-setup_global_fonts()
 
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
