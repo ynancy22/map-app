@@ -163,9 +163,8 @@ def setup_global_fonts():
     plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
     # 確保負號等特殊符號正常顯示
     plt.rcParams['axes.unicode_minus'] = False 
-    # 印出所有包含 "Emoji" 字眼的已註冊字體
-    print([f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name])
-
+    # 診斷資訊：這會印出 ['Noto Color Emoji'] 或類似名稱
+    print(f"DEBUG: 成功註冊的 Emoji 字體: {registered_emoji}")
 
 
 
