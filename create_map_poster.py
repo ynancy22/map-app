@@ -155,7 +155,7 @@ def setup_global_fonts():
                 print(f"字體註冊警告 {f}: {e}")
     
     # 設定全域字體清單：讓 Roboto 永遠作為第一順位，Noto Sans TC 作為中文補丁
-    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Emoji', 'DejaVu Sans', 'sans-serif']
     # 確保負號等特殊符號正常顯示
     plt.rcParams['axes.unicode_minus'] = False 
     # 印出所有包含 "Emoji" 字眼的已註冊字體
