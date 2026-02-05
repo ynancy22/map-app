@@ -6,3 +6,5 @@ geopy
 lat-lon-parser
 tqdm
 requests
+fonttools
+emoji
