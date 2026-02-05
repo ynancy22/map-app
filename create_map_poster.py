@@ -325,7 +325,8 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
 
     if custom_text:
         ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], 
-                alpha=0.8, ha="center", fontsize=custom_text_size * sf, zorder=11)
+                alpha=0.8, ha="center", fontsize=custom_text_size * sf,
+                fontfamily=target_family, zorder=11)
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
