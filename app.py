@@ -43,7 +43,7 @@ with st.sidebar:
     # 座標顯示開關
     # use_manual = st.toggle("手動輸入座標 (Manual input)", value=False)
     show_coords = st.toggle("顯示經緯度 (Show coordinates)", value=True)
-   
+    use_manual = False
     if use_manual:
         st.caption("在 Google Maps 欲製作的地點按右鍵即可複製座標")
         manual_lat = st.number_input("緯度 Lat", value=0, format="%.4f")
