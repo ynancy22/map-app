@@ -80,22 +80,6 @@ def cache_set(key: str, value):
 
 # --- 3. 字體加載邏輯 (汧水體偵測與回退) ---
 def load_fonts(font_family: Optional[str] = None) -> dict:
-    """
-    加載字體邏輯：優先使用本地 Iansui (汧水體) 以支援中文。
-    """
-    iansui_path = os.path.join(FONTS_DIR, "Iansui-Regular.ttf")
-
-    # 1. 嘗試註冊本地汧水體
-    if os.path.exists(iansui_path):
-        try:
-            fm.fontManager.addfont(iansui_path)
-            return {
-                "bold": iansui_path,
-                "regular": iansui_path,
-                "light": iansui_path,
-            }
-        except Exception:
-            pass
 
     # 2. 如果指定了 Google Fonts 則嘗試透過外部模組載入
     if font_family and external_load_fonts:
@@ -159,6 +143,7 @@ def setup_global_fonts():
     font_files = [
         "Roboto-Regular.ttf", "Roboto-Bold.ttf", "Roboto-Light.ttf",
         "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf"
+        "NotoColorEmoji.ttf"
     ]
 
     for f in font_files:
@@ -170,7 +155,7 @@ def setup_global_fonts():
                 print(f"字體註冊警告 {f}: {e}")
 
     # 設定全域字體清單：讓 Roboto 永遠作為第一順位，Noto Sans TC 作為中文補丁
-    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'DejaVu Sans', 'sans-serif']
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
     # 確保負號等特殊符號正常顯示
     plt.rcParams['axes.unicode_minus'] = False 
 
