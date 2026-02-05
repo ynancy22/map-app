@@ -170,7 +170,7 @@ def grid_theme_selector():
 
 
 def theme_selector_with_single_preview():
-    st.sidebar.subheader("🎨 地圖主題設定")
+    # st.sidebar.subheader("🎨 地圖配色 Theme")
     
     # 1. 獲取所有主題清單 (從預覽圖資料夾抓取檔案名稱)
     theme_files = sorted([f.stem for f in PREVIEW_DIR.glob("*.png")])
@@ -185,7 +185,7 @@ def theme_selector_with_single_preview():
         st.session_state.selected_theme = theme_files[0]
 
     selected_theme = st.sidebar.selectbox(
-        "選擇配色方案",
+        "選擇主題配色 Select theme",
         theme_files,
         index=theme_files.index(st.session_state.selected_theme)
     )
@@ -206,10 +206,10 @@ def theme_selector_with_single_preview():
 
     with col2:
         # 右側顯示相關文字
-        st.write(f"**{selected_theme}**")
+        # st.write(f"**{selected_theme}**")
         # 這裡可以根據主題名稱顯示描述，或是顯示色彩分析
-        st.caption("(配色：文字 | 背景 | 道路)")
-        st.caption("(Theme preview: text/bg/road)")
+        st.caption("(預覽：文字/背景/道路)")
+        st.caption("(Preview: text/bg/road)")
     
     return selected_theme
 
