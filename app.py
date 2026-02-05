@@ -20,27 +20,28 @@ ox.settings.log_console = False  # 關閉日誌寫入檔案，這常引起權限
 
 # 網頁配置
 st.set_page_config(page_title="MapToPoster", page_icon="📍")
-st.title("📍 MapToPoster")
+st.title("📍 MapToPoster Online")
 st.write("網頁版地圖生成器")
 st.write("輸入城市與國家，生成專屬的極簡風格地圖海報。")
+st.write("Customized stylish map generator")
 
 # --- 側邊欄設定 ---
 with st.sidebar:
-    st.header("🎨 海報自訂選項 Options")
+    st.header("🎨 自訂選項 Options")
     
     city = st.text_input("城市 (City)", "Taipei")
-    city_size_opt = st.radio("城市文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
+    city_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
     
     country = st.text_input("國家 (Country)", "Taiwan")
-    country_size_opt = st.radio("國家文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
+    country_size_opt = st.radio("文字大小 font size", ["小 S", "中 M", "大 L"], index=1, horizontal=True)
     
     # 客製化紀念文字
-    custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
-    custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
-    st.caption("不支援表情符號 Emoji are not supported")
-
+    custom_text = st.text_input("客製化文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
+    st.caption("目前不支援表情符號 Emoji are not supported")
+    custom_text_size = st.slider("文字大小 font size", 10, 40, 18)
+    
     # 座標顯示開關
-    use_manual = st.toggle("手動輸入座標 (Manual input)", value=False)
+    # use_manual = st.toggle("手動輸入座標 (Manual input)", value=False)
     show_coords = st.toggle("顯示經緯度 (Show coordinates)", value=True)
    
     if use_manual:
@@ -275,7 +276,7 @@ st.markdown(
 if generate_btn:
     # 確保清理時目錄是存在的
     if CACHE_DIR.exists():
-        with st.spinner("正在優化快取數據..."):
+        with st.spinner("正在調整暫存數據..."):
             for pkl in CACHE_DIR.glob("*.pkl"):
                 # 保留座標快取，只刪除地圖圖資
                 if any(prefix in pkl.name for prefix in ["graph_", "water_", "parks_"]):
@@ -285,7 +286,7 @@ if generate_btn:
                         pkl.unlink()
                     except Exception as e:
                         # 即使刪除失敗也繼續執行，不要讓整個 App 崩潰
-                        st.warning(f"暫時無法清理部分快取: {pkl.name}")
+                        st.warning(f"暫時無法清理部分暫存: {pkl.name}")
 
     with st.spinner("正在處理數據並繪圖，請稍候... Processing..."):
         try:
@@ -315,7 +316,7 @@ if generate_btn:
             )
             st.session_state.poster_path = output_file
         except Exception as e:
-            st.error(f"生成失敗 Error: {e}")
+            st.error(f"失敗 Error: {e}")
 
 # --- 顯示與下載區塊 ---
 if st.session_state.poster_path and os.path.exists(st.session_state.poster_path):
@@ -324,7 +325,7 @@ if st.session_state.poster_path and os.path.exists(st.session_state.poster_path)
     
     with open(st.session_state.poster_path, "rb") as file:
         st.download_button(
-            label="💾 下載高解析度海報 Download Hi-res",
+            label="💾 下載高解析度海報 Download hi-res graphic",
             data=file,
             file_name=f"{city}_poster.png",
             mime="image/png",
