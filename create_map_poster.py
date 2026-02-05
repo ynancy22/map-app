@@ -53,8 +53,7 @@ FILE_ENCODING = "utf-8"
 
 # FONTS = load_fonts()
 THEME = {} 
-# 執行全域設定
-setup_global_fonts()
+
 
 # --- 2. 緩存工具函數 (修正 _cache_path 未定義問題) ---
 def _cache_path(key: str) -> Path:
@@ -165,7 +164,8 @@ def setup_global_fonts():
     plt.rcParams['axes.unicode_minus'] = False 
     # 診斷資訊：這會印出 ['Noto Color Emoji'] 或類似名稱
     print(f"DEBUG: 成功註冊的 Emoji 字體: {registered_emoji}")
-
+# 執行全域設定
+setup_global_fonts()
 
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
