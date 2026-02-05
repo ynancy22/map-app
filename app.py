@@ -51,7 +51,7 @@ with st.sidebar:
     st.divider()
 
     # 地圖半徑控制
-    st.write("地圖半徑 (Meters)")
+    st.write("地圖半徑 (Map range)")
     final_dist = st.select_slider(
         "選擇定點 Radius",
         options=[2000, 4000, 6000, 8000, 10000, 15000, 20000],
@@ -214,8 +214,7 @@ def theme_selector_with_single_preview():
     return selected_theme
 
 # 在主程式中調用
-current_theme = theme_selector_with_single_preview()
-
+selected_theme = theme_selector_with_single_preview()
 
 # 轉換比例係數
 size_map = {"小 S": 0.7, "中 M": 1.0, "大 L": 1.4}
