@@ -10,7 +10,6 @@ from typing import Optional
 
 import requests
 import matplotlib.font_manager as fm
-from fontTools.ttLib import TTFont  # 需要在 requirements.txt 加入 fonttools
 
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
@@ -167,32 +166,4 @@ def load_fonts(font_family=None):
         "light": str(base_dir / "fonts" / "Roboto-Light.ttf")
     }
 
-def has_glyph(font_path, char):
-    """偵測字體是否包含特定字元"""
-    font = TTFont(font_path)
-    for table in font['cmap'].tables:
-        if ord(char) in table.cmap:
-            return True
-    return False
 
-def render_mixed_text(ax, x, y, text, fontsize, color, **kwargs):
-    """
-    自動偵測 Emoji 並嘗試使用特定字體渲染。
-    Matplotlib 原生對彩色 Emoji 支援有限，此處建議使用支援 Emoji 的字體。
-    """
-    emoji_font_path = "fonts/NotoColorEmoji.ttf"
-    standard_fonts = ['Roboto', 'Noto Sans TC', 'sans-serif']
-    
-    # 這裡使用簡單的區塊渲染或設定回退鏈
-    # 注意：Matplotlib 3.4+ 支援部分彩色字體渲染
-    if os.path.exists(emoji_font_path):
-        # 將 Emoji 字體加入回退鏈的最前端（或根據需求調整）
-        combined_families = standard_fonts + ['Noto Color Emoji']
-        fm.fontManager.addfont(emoji_font_path)
-    else:
-        combined_families = standard_fonts
-
-    return ax.text(x, y, text, transform=ax.transAxes, 
-                   fontfamily=combined_families, 
-                   fontsize=fontsize, color=color, 
-                   ha="center", va="center", **kwargs)
