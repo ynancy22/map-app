@@ -163,7 +163,7 @@ def setup_global_fonts():
     emoji_family = registered_emoji[0] if registered_emoji else 'Noto Color Emoji'
 
     # 設定全域字體回退清單
-    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', emoji_family, 'DejaVu Sans', 'sans-serif']
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False 
 
     # 現在可以安全地印出診斷資訊，不會再報 NameError
@@ -308,13 +308,11 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     # 1. 繪製城市 (City) - 使用 Bold
     display_city = "  ".join(list(city.upper())) if is_latin_script(city) else city
     ax.text(0.5, 0.14, display_city, transform=ax.transAxes, color=THEME["text"], 
-            ha="center", fontsize=60 * city_scale * sf, 
-            fontfamily=target_family, weight='bold', zorder=11)
+            ha="center", fontsize=60 * city_scale * sf, weight='bold', zorder=11)
 
     # 2. 繪製國家 (Country) - 使用 Light
     ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes, color=THEME["text"], 
-            ha="center", fontsize=22 * country_scale * sf, 
-            fontfamily=target_family, weight='light', zorder=11)
+            ha="center", fontsize=22 * country_scale * sf, weight='light', zorder=11)
 
     coord_y = 0.07  # 座標的預設高度
     
@@ -333,8 +331,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
 
     if custom_text:
         ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], 
-                alpha=0.8, ha="center", fontsize=custom_text_size * sf,
-                fontfamily=target_family, zorder=11)
+                alpha=0.8, ha="center", fontsize=custom_text_size * sf, zorder=11)
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
