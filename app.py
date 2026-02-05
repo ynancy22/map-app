@@ -312,7 +312,8 @@ if generate_btn:
                 show_coords=show_coords
             )
             st.session_state.poster_path = output_file
-                
+                # 印出所有包含 "Emoji" 字眼的已註冊字體
+            print([f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name])
         except Exception as e:
             st.error(f"生成失敗 Error: {e}")
 
