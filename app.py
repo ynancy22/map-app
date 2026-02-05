@@ -82,47 +82,51 @@ PREVIEW_DIR = Path("theme_previews")
 def grid_theme_selector():
     st.sidebar.subheader("🎨 點擊方塊切換主題")
     
-    # 1. 核心 CSS 修正：將按鈕強行拉伸至與容器等大，並設為全透明
+    # 核心 CSS：隱藏按鈕視覺，但保留點擊功能並覆蓋全區
     st.sidebar.markdown("""
         <style>
-        /* 容器設定 */
-        .theme-tile {
+        /* 1. 定義容器與圖片樣式 */
+        .theme-container {
             position: relative;
             width: 100%;
-            margin-bottom: 10px;
+            cursor: pointer;
+            margin-bottom: -30px; /* 關鍵：強制縮減 Streamlit 預設的按鈕間距 */
         }
-        /* 圖片樣式：預設圓角 */
-        .theme-tile img {
-            border-radius: 8px;
+        .theme-container img {
             width: 100%;
+            border-radius: 8px;
             display: block;
+            transition: transform 0.1s;
         }
-        /* 選中狀態的邊框效果 */
-        .selected-tile {
+        /* 2. 選中時的紅色外框 */
+        .selected-tile img {
             outline: 3px solid #FF4B4B;
             outline-offset: 2px;
-            border-radius: 8px;
         }
-        /* 透明按鈕：絕對定位覆蓋全區 */
-        .theme-tile div[data-testid="stButton"] button {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
+        /* 3. 徹底隱藏下方的按鈕方框 */
+        .theme-container div[data-testid="stButton"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .theme-container button {
             width: 100% !important;
             height: 100% !important;
             background-color: transparent !important;
             border: none !important;
             color: transparent !important;
             padding: 0 !important;
-            z-index: 10;
+            margin: 0 !important;
+            /* 關鍵：讓按鈕完全透明但仍可點擊 */
+            visibility: visible !important;
         }
-        /* 移除按鈕點擊時的預設陰影與背景 */
-        .theme-tile div[data-testid="stButton"] button:focus,
-        .theme-tile div[data-testid="stButton"] button:active,
-        .theme-tile div[data-testid="stButton"] button:hover {
-            background-color: transparent !important;
-            color: transparent !important;
+        /* 移除點擊時的任何背景變色 */
+        .theme-container button:hover, .theme-container button:active, .theme-container button:focus {
+            background: transparent !important;
             box-shadow: none !important;
+            color: transparent !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -135,8 +139,8 @@ def grid_theme_selector():
     if "selected_theme" not in st.session_state:
         st.session_state.selected_theme = theme_files[0].stem
 
-    # 2. 建立 4 列網格
-    cols_per_row = 4
+    # 繪製網格
+    cols_per_row = 6
     for i in range(0, len(theme_files), cols_per_row):
         cols = st.sidebar.columns(cols_per_row)
         for j, col in enumerate(cols):
@@ -146,14 +150,14 @@ def grid_theme_selector():
                 is_selected = st.session_state.selected_theme == theme_name
                 
                 with col:
-                    # 使用一個特定的 div 包裹圖片與按鈕
+                    # 使用 wrapper div 包裹
                     selected_class = "selected-tile" if is_selected else ""
-                    st.markdown(f'<div class="theme-tile {selected_class}">', unsafe_allow_html=True)
+                    st.markdown(f'<div class="theme-container {selected_class}">', unsafe_allow_html=True)
                     
-                    # 顯示三色帶預覽
+                    # 顯示圖片
                     st.image(str(theme_path), use_container_width=True)
                     
-                    # 放置透明按鈕
+                    # 放置透明按鈕，這會透過 CSS 覆蓋在圖片上並消除下方空間
                     if st.button("", key=f"t_{theme_name}"):
                         st.session_state.selected_theme = theme_name
                         st.rerun()
