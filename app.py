@@ -37,6 +37,7 @@ with st.sidebar:
     # 客製化紀念文字
     custom_text = st.text_input("紀念文字 (選填) Customized text (optional)", placeholder="例如：Our First Date / 2019.02.14")
     custom_text_size = st.slider("紀念文字大小 font size", 10, 40, 18)
+    st.caption("不支援表情符號 Emoji are not supported")
 
     # 座標顯示開關
     use_manual = st.toggle("手動輸入座標 (Manual input)", value=False)
