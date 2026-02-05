@@ -135,35 +135,3 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
         return None
 
 
-def load_fonts(font_family=None):
-    """
-    加載字體：優先偵測本地 Iansui-Regular.ttf。
-    """
-    # 獲取專案根目錄，確保在雲端環境路徑解析正確
-    base_dir = Path(__file__).parent
-    # 強制轉換為字串路徑，避免 Python 3.13 的相容性問題
-    iansui_path = str(base_dir / "fonts" / "Iansui-Regular.ttf")
-
-    if os.path.exists(iansui_path):
-        try:
-            # 嘗試註冊字體到 Matplotlib
-            fm.fontManager.addfont(iansui_path)
-            print(f"✓ 成功註冊字體: {iansui_path}")
-            return {
-                "bold": iansui_path,
-                "regular": iansui_path,
-                "light": iansui_path
-            }
-        except Exception as e:
-            # 如果檔案損壞 (FT2Font error) 會跳到這裡
-            print(f"⚠ 字體檔案無法讀取 (損壞或格式錯誤): {e}")
-    
-    # 安全回退機制：改用 Roboto 或系統字體
-    print("正在回退至預設 Roboto 字體...")
-    return {
-        "bold": str(base_dir / "fonts" / "Roboto-Bold.ttf"),
-        "regular": str(base_dir / "fonts" / "Roboto-Regular.ttf"),
-        "light": str(base_dir / "fonts" / "Roboto-Light.ttf")
-    }
-
-
