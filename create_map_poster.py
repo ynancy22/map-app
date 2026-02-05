@@ -153,15 +153,9 @@ def setup_global_fonts():
                 fm.fontManager.addfont(path)
             except Exception as e:
                 print(f"字體註冊警告 {f}: {e}")
-    # 這會掃描所有字體，找出剛剛註冊的 NotoColorEmoji-Regular.ttf 真正的 Family Name
-    registered_emoji_fonts = [f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name]
-    
-    # 預設名稱通常是 'Noto Color Emoji'
-    emoji_family = registered_emoji_fonts[0] if registered_emoji_fonts else 'Noto Color Emoji'
-
     
     # 設定全域字體清單：讓 Roboto 永遠作為第一順位，Noto Sans TC 作為中文補丁
-    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', emoji_family, 'DejaVu Sans', 'sans-serif']
+    plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
     # 確保負號等特殊符號正常顯示
     plt.rcParams['axes.unicode_minus'] = False 
     # 印出所有包含 "Emoji" 字眼的已註冊字體
