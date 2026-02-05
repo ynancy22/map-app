@@ -191,15 +191,25 @@ def theme_selector_with_single_preview():
     )
     st.session_state.selected_theme = selected_theme
 
-    # 3. 在下方顯示當前選擇的主題預覽方格
-    st.sidebar.markdown("---")
-    st.sidebar.write(f"**當前風格預覽：{selected_theme}**")
+   # 3. 調整預覽配置：兩欄顯示
+    # 左欄 1/3 寬度，右欄 2/3 寬度
+    col1, col2 = st.sidebar.columns([1, 2])
     
     preview_path = PREVIEW_DIR / f"{selected_theme}.png"
-    if preview_path.exists():
-        # 顯示放大的三色帶方塊，並加上圓角效果
-        st.sidebar.image(str(preview_path), use_container_width=True)
-        st.sidebar.caption("左：文字色 | 中：背景色 | 右：道路色")
+    
+    with col1:
+        # 左側顯示預覽圖
+        if preview_path.exists():
+            st.image(str(preview_path), use_container_width=True)
+        else:
+            st.write("🖼️")
+
+    with col2:
+        # 右側顯示相關文字
+        st.write(f"**{selected_theme}**")
+        # 這裡可以根據主題名稱顯示描述，或是顯示色彩分析
+        st.caption("主題預覽色帶")
+        st.caption("(文字 | 背景 | 道路)")
     
     return selected_theme
 
