@@ -315,8 +315,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
         lat, lon = point
         coord_text = f"{abs(lat):.4f}° {'N' if lat>=0 else 'S'} / {abs(lon):.4f}° {'E' if lon>=0 else 'W'}"
         ax.text(0.5, 0.07, coord_text, transform=ax.transAxes, color=THEME["text"], 
-                alpha=0.7, ha="center", fontsize=14 * sf, 
-                fontfamily=target_family, zorder=11)        
+                alpha=0.7, ha="center", fontsize=14 * sf, zorder=11)        
         # 如果有顯示座標，客製化文字放在比較低的位置
         custom_y = 0.04
     else:
@@ -326,8 +325,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
 
     if custom_text:
         ax.text(0.5, custom_y, custom_text, transform=ax.transAxes, color=THEME["text"], 
-                alpha=0.8, ha="center", fontsize=custom_text_size * sf, 
-                fontfamily=target_family, zorder=11)
+                alpha=0.8, ha="center", fontsize=custom_text_size * sf, zorder=11)
     plt.savefig(output_file, facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
