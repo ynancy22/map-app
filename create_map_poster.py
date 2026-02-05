@@ -295,8 +295,8 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     create_gradient_fade(ax, THEME['gradient_color'], 'bottom'); create_gradient_fade(ax, THEME['gradient_color'], 'top')
     sf = min(height, width) / 12.0
     # 統一使用的字體家族清單
-    target_family = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji']
-
+    # target_family = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji']
+    target_family = 'sans-serif'
     # 1. 繪製城市 (City) - 使用 Bold
     display_city = "  ".join(list(city.upper())) if is_latin_script(city) else city
     ax.text(0.5, 0.14, display_city, transform=ax.transAxes, color=THEME["text"], 
