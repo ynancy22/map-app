@@ -4,6 +4,19 @@ import shutil
 from pathlib import Path
 import create_map_poster
 from create_map_poster import create_poster, load_theme, get_coordinates
+import os
+from pathlib import Path
+import osmnx as ox
+
+# 1. 定義快取目錄 (使用相對路徑)
+CACHE_DIR = Path("cache")
+
+# 2. 自動檢查並建立目錄 (parents=True 確保父資料夾存在, exist_ok=True 避免重複建立報錯)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+# 3. 設定 OSMnx 使用此目錄
+ox.settings.cache_folder = str(CACHE_DIR)
+ox.settings.use_cache = True
 
 # 網頁配置
 st.set_page_config(page_title="MapToPoster", page_icon="📍")
@@ -115,19 +128,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
+
 # --- 生成邏輯 ---
 if generate_btn:
-    # 1. 自動清理舊快取，防止重複生成錯誤
-    cache_dir = Path(os.environ.get("CACHE_DIR", "cache"))
-    if cache_dir.exists():
-        with st.spinner("正在清理舊快取... Cleaning cache..."):
-            for pkl in cache_dir.glob("*.pkl"):
-                # 關鍵：只刪除地圖數據 (graph/water/parks)，保留 coords 快取
+    # 確保清理時目錄是存在的
+    if CACHE_DIR.exists():
+        with st.spinner("正在優化快取數據..."):
+            for pkl in CACHE_DIR.glob("*.pkl"):
+                # 保留座標快取，只刪除地圖圖資
                 if any(prefix in pkl.name for prefix in ["graph_", "water_", "parks_"]):
                     try:
+                        # 使用 os.chmod 確保檔案是可寫入狀態 (預防萬一)
+                        os.chmod(pkl, 0o666) 
                         pkl.unlink()
-                    except:
-                        pass
+                    except Exception as e:
+                        # 即使刪除失敗也繼續執行，不要讓整個 App 崩潰
+                        st.warning(f"暫時無法清理部分快取: {pkl.name}")
 
     with st.spinner("正在處理數據並繪圖，請稍候... Processing..."):
         try:
