@@ -75,6 +75,57 @@ with st.sidebar:
     
     selected_theme = st.selectbox("選擇主題 (Theme)", available_themes, index=0)
 
+
+
+# 設定預覽圖目錄 (剛才生成的三色帶 PNG)
+PREVIEW_DIR = Path("theme_previews")
+
+def grid_theme_selector():
+    st.sidebar.subheader("🎨 選取地圖主題")
+    
+    # 1. 取得所有主題清單
+    theme_files = list(PREVIEW_DIR.glob("*.png"))
+    if not theme_files:
+        st.sidebar.warning("請先生成主題預覽圖")
+        return None
+
+    # 2. 設定網格列數 (例如每列 4 個)
+    cols_per_row = 3
+    
+    # 初始化 Session State
+    if "selected_theme" not in st.session_state:
+        st.session_state.selected_theme = theme_files[0].stem
+
+    # 3. 繪製方格網格
+    # 計算需要幾列
+    for i in range(0, len(theme_files), cols_per_row):
+        cols = st.sidebar.columns(cols_per_row)
+        for j, col in enumerate(cols):
+            if i + j < len(theme_files):
+                theme_path = theme_files[i + j]
+                theme_name = theme_path.stem
+                
+                with col:
+                    # 使用圖片作為按鈕，點擊後更新主題
+                    # 加入一個邊框效果來標示目前選中的主題
+                    is_selected = st.session_state.selected_theme == theme_name
+                    border_style = "2px solid #FF4B4B" if is_selected else "none"
+                    
+                    # 顯示預覽圖片
+                    st.image(str(theme_path), use_container_width=True)
+                    
+                    # 透明按鈕用於選取
+                    if st.button(f"選擇", key=f"btn_{theme_name}", use_container_width=True):
+                        st.session_state.selected_theme = theme_name
+                        st.rerun() # 立即更新頁面
+
+    st.sidebar.caption(f"套用主題: **{st.session_state.selected_theme}**")
+    return st.session_state.selected_theme
+
+# 在主程式中調用
+current_theme = grid_theme_selector()
+
+
 # 轉換比例係數
 size_map = {"小 S": 0.7, "中 M": 1.0, "大 L": 1.4}
 line_map = {"細 Light": 0.6, "標準 Regular": 1.0, "粗 Bold": 1.6}
