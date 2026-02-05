@@ -143,7 +143,7 @@ def setup_global_fonts():
     font_files = [
         "Roboto-Regular.ttf", "Roboto-Bold.ttf", "Roboto-Light.ttf",
         "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf", "NotoSansTC-Light.ttf"
-        "NotoColorEmoji.ttf"
+        "NotoColorEmoji-Regular.ttf"
     ]
 
     for f in font_files:
