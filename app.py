@@ -73,7 +73,7 @@ with st.sidebar:
     if not available_themes:
         available_themes = ["terracotta"] 
     
-    selected_theme = st.selectbox("選擇主題 (Theme)", available_themes, index=0)
+    #v selected_theme = st.selectbox("選擇主題 (Theme)", available_themes, index=0)
 
 
 
