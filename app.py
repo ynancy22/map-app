@@ -165,9 +165,46 @@ def grid_theme_selector():
                     st.markdown('</div>', unsafe_allow_html=True)
 
     return st.session_state.selected_theme
-    
 # 在主程式中調用
-current_theme = grid_theme_selector()
+# current_theme = grid_theme_selector()
+
+
+def theme_selector_with_single_preview():
+    st.sidebar.subheader("🎨 地圖主題設定")
+    
+    # 1. 獲取所有主題清單 (從預覽圖資料夾抓取檔案名稱)
+    theme_files = sorted([f.stem for f in PREVIEW_DIR.glob("*.png")])
+    
+    if not theme_files:
+        st.sidebar.warning("找不到預覽圖，請先執行生成腳本")
+        return "default"
+
+    # 2. 原生下拉式文字清單
+    # 如果先前有選過，則保留選擇狀態
+    if "selected_theme" not in st.session_state:
+        st.session_state.selected_theme = theme_files[0]
+
+    selected_theme = st.sidebar.selectbox(
+        "選擇配色方案",
+        theme_files,
+        index=theme_files.index(st.session_state.selected_theme)
+    )
+    st.session_state.selected_theme = selected_theme
+
+    # 3. 在下方顯示當前選擇的主題預覽方格
+    st.sidebar.markdown("---")
+    st.sidebar.write(f"**當前風格預覽：{selected_theme}**")
+    
+    preview_path = PREVIEW_DIR / f"{selected_theme}.png"
+    if preview_path.exists():
+        # 顯示放大的三色帶方塊，並加上圓角效果
+        st.sidebar.image(str(preview_path), use_container_width=True)
+        st.sidebar.caption("左：文字色 | 中：背景色 | 右：道路色")
+    
+    return selected_theme
+
+# 在主程式中調用
+current_theme = theme_selector_with_single_preview()
 
 
 # 轉換比例係數
