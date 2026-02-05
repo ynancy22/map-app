@@ -80,49 +80,63 @@ with st.sidebar:
 # 設定預覽圖目錄 (剛才生成的三色帶 PNG)
 PREVIEW_DIR = Path("theme_previews")
 def grid_theme_selector():
-    st.sidebar.subheader("🎨 點擊方塊選取主題")
+    st.sidebar.subheader("🎨 點擊方塊切換主題")
     
-    # 1. 注入 CSS：讓按鈕變成透明並覆蓋在圖片上方
+    # 1. 核心 CSS 修正：將按鈕強行拉伸至與容器等大，並設為全透明
     st.sidebar.markdown("""
         <style>
-        /* 定義網格容器的相對定位 */
-        [data-testid="stVerticalBlock"] > div:has(div.stButton) {
+        /* 容器設定 */
+        .theme-tile {
             position: relative;
-        }
-        /* 隱藏預覽網格中的按鈕文字與背景，使其透明且覆蓋全區 */
-        .theme-tile-container button {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
+            margin-bottom: 10px;
+        }
+        /* 圖片樣式：預設圓角 */
+        .theme-tile img {
+            border-radius: 8px;
+            width: 100%;
+            display: block;
+        }
+        /* 選中狀態的邊框效果 */
+        .selected-tile {
+            outline: 3px solid #FF4B4B;
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+        /* 透明按鈕：絕對定位覆蓋全區 */
+        .theme-tile div[data-testid="stButton"] button {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
             background-color: transparent !important;
             border: none !important;
             color: transparent !important;
+            padding: 0 !important;
             z-index: 10;
-            cursor: pointer;
         }
-        /* 選中時的發光邊框效果 */
-        .selected-theme {
-            border: 3px solid #FF4B4B;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(255, 75, 75, 0.5);
+        /* 移除按鈕點擊時的預設陰影與背景 */
+        .theme-tile div[data-testid="stButton"] button:focus,
+        .theme-tile div[data-testid="stButton"] button:active,
+        .theme-tile div[data-testid="stButton"] button:hover {
+            background-color: transparent !important;
+            color: transparent !important;
+            box-shadow: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # 2. 獲取主題檔案
     theme_files = sorted(list(PREVIEW_DIR.glob("*.png")))
     if not theme_files:
-        st.sidebar.warning("請先執行 generate_all_previews.py 生成預覽圖")
+        st.sidebar.warning("找不到預覽圖")
         return "default"
 
-    # 初始化 Session State
     if "selected_theme" not in st.session_state:
         st.session_state.selected_theme = theme_files[0].stem
 
-    # 3. 繪製 4 列網格
-    cols_per_row = 6
+    # 2. 建立 4 列網格
+    cols_per_row = 4
     for i in range(0, len(theme_files), cols_per_row):
         cols = st.sidebar.columns(cols_per_row)
         for j, col in enumerate(cols):
@@ -132,27 +146,20 @@ def grid_theme_selector():
                 is_selected = st.session_state.selected_theme == theme_name
                 
                 with col:
-                    # 建立一個容器，用於套用選中樣式
-                    container = st.container()
-                    if is_selected:
-                        # 使用 markdown 加上選中效果的 div
-                        st.markdown(f'<div class="selected-theme">', unsafe_allow_html=True)
+                    # 使用一個特定的 div 包裹圖片與按鈕
+                    selected_class = "selected-tile" if is_selected else ""
+                    st.markdown(f'<div class="theme-tile {selected_class}">', unsafe_allow_html=True)
                     
-                    # 顯示你設計的三色帶預覽圖 (text/bg/road_default)
+                    # 顯示三色帶預覽
                     st.image(str(theme_path), use_container_width=True)
                     
-                    # 放置透明按鈕，透過 key 區分
-                    # 我們將按鈕包裹在一個特定 class 的 div 中
-                    st.markdown('<div class="theme-tile-container">', unsafe_allow_html=True)
-                    if st.button("", key=f"tile_{theme_name}", use_container_width=True):
+                    # 放置透明按鈕
+                    if st.button("", key=f"t_{theme_name}"):
                         st.session_state.selected_theme = theme_name
                         st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
                     
-                    if is_selected:
-                        st.markdown('</div>', unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.sidebar.info(f"當前風格：**{st.session_state.selected_theme}**")
     return st.session_state.selected_theme
     
 # 在主程式中調用
