@@ -196,14 +196,13 @@ def theme_selector_with_single_preview():
     col1, col2 = st.sidebar.columns([1, 4])
     
     preview_path = PREVIEW_DIR / f"{selected_theme}.png"
-    
     with col1:
-        # 左側顯示預覽圖
+        # 左側顯示預覽圖：更新為 width='stretch' 以符合 2026 版本規範
         if preview_path.exists():
-            st.image(str(preview_path), use_container_width=True)
+            st.image(str(preview_path), width='stretch')
         else:
             st.write("🖼️")
-
+            
     with col2:
         # 右側顯示相關文字
         # st.write(f"**{selected_theme}**")
