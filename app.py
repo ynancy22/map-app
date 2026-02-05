@@ -7,6 +7,7 @@ from create_map_poster import create_poster, load_theme, get_coordinates
 import os
 from pathlib import Path
 import osmnx as ox
+import matplotlib.font_manager as fm
 
 # 強制定義快取位置
 CACHE_DIR = Path("cache")
