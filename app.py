@@ -8,15 +8,14 @@ import os
 from pathlib import Path
 import osmnx as ox
 
-# 1. 定義快取目錄 (使用相對路徑)
+# 強制定義快取位置
 CACHE_DIR = Path("cache")
-
-# 2. 自動檢查並建立目錄 (parents=True 確保父資料夾存在, exist_ok=True 避免重複建立報錯)
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# 3. 設定 OSMnx 使用此目錄
-ox.settings.cache_folder = str(CACHE_DIR)
+# 徹底設定 ox 的路徑，避免它亂跑
+ox.settings.cache_folder = str(CACHE_DIR.absolute())
 ox.settings.use_cache = True
+ox.settings.log_console = False  # 關閉日誌寫入檔案，這常引起權限錯誤
 
 # 網頁配置
 st.set_page_config(page_title="MapToPoster", page_icon="📍")
