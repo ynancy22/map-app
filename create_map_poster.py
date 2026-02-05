@@ -158,11 +158,13 @@ def setup_global_fonts():
     plt.rcParams['font.sans-serif'] = ['Roboto', 'Noto Sans TC', 'Noto Color Emoji', 'DejaVu Sans', 'sans-serif']
     # 確保負號等特殊符號正常顯示
     plt.rcParams['axes.unicode_minus'] = False 
+    # 印出所有包含 "Emoji" 字眼的已註冊字體
+    print([f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name])
+
 
 # 執行全域設定
 setup_global_fonts()
-# 印出所有包含 "Emoji" 字眼的已註冊字體
-print([f.name for f in fm.fontManager.ttflist if 'Emoji' in f.name])
+
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
     """Creates a fade effect at the top or bottom."""
